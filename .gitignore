@@ -1,0 +1,6 @@
+# Ignore build artifacts
+/build
+/bin
+
+# Ignore test files
+/tests
