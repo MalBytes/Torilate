@@ -1,0 +1,48 @@
+/* 
+    File: src/net/socket.h
+    Author: Trident Apollo
+    Date: 23-01-2026
+    Reference: None
+    Description:
+        Platform-independent TCP socket abstraction for Torilate.
+        This layer hides OS-specific networking details and exposes
+        a minimal, portable API for higher-level protocols.
+*/
+
+#ifndef TORILATE_NET_SOCKET_H
+#define TORILATE_NET_SOCKET_H
+
+#include <stddef.h>
+#include <stdint.h>
+
+/* Opaque socket handle */
+typedef struct {
+    int handle;   /* SOCKET on Windows, fd on POSIX */
+} NetSocket;
+
+/* Lifecycle */
+int  net_init(void);
+void net_cleanup(void);
+
+/* Connection */
+int net_connect(NetSocket *sock, const char *ip, uint16_t port);
+
+/* Utils */
+uint16_t net_htons(uint16_t value);
+uint32_t net_htonl(uint32_t value);
+uint16_t net_ntohs(uint16_t value);
+uint32_t net_ntohl(uint32_t value);
+
+int net_parse_ipv4(const char *ip, uint32_t *out);
+
+/* I/O */
+int net_send_all(NetSocket *sock, const void *buf, size_t len);
+int net_recv(NetSocket *sock, void *buf, size_t len);
+
+/* Teardown */
+void net_close(NetSocket *sock);
+
+/* Error reporting */
+int net_last_error(void);
+
+#endif
