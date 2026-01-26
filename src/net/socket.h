@@ -15,9 +15,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define INVALID_SOCKET (NetSocket){ .handle = -1 } // Invalid socket representation, handle is -1
+
 /* Opaque socket handle */
 typedef struct {
-    int handle;   /* SOCKET on Windows, fd on POSIX */
+    int handle;
 } NetSocket;
 
 /* Lifecycle */
@@ -32,6 +34,7 @@ uint16_t net_htons(uint16_t value);
 uint32_t net_htonl(uint32_t value);
 uint16_t net_ntohs(uint16_t value);
 uint32_t net_ntohl(uint32_t value);
+uint8_t is_valid_socket(NetSocket *sock);
 
 int net_parse_ipv4(const char *ip, uint32_t *out);
 

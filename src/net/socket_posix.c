@@ -64,6 +64,10 @@ uint32_t net_ntohl(uint32_t value) {
     return ntohl(value);
 }
 
+uint8_t is_valid_socket(NetSocket *sock) {
+    return sock->handle != -1;
+}
+
 int net_parse_ipv4(const char *ip, uint32_t *out) {
     struct in_addr addr;
     if (inet_pton(AF_INET, ip, &addr) != 1)

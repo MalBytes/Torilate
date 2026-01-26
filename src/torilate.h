@@ -1,9 +1,12 @@
 /* 
-    File: torialate.h 
+    File: src/torilate.h
     Author: Trident Apollo
     Date: 23-01-2026
-    Socks4 RFC: https://www.openssh.org/txt/socks4.protocol
-    Description: TODO
+    Reference: None
+    Description:
+        Public entry-point definitions and shared interfaces for Torilate.
+        This header declares core data structures, constants, and function
+        prototypes used by the Torilate CLI.
 */
 
 #ifndef TORILATE_H
@@ -27,8 +30,16 @@
 
 
 // Definitions
-#define PROXY_IP    "127.0.0.1"
-#define PROXY_PORT  9050
-#define USER_ID    "torilate"
+
+#define TOR_IP    "127.0.0.1"
+#define TOR_PORT  9050
+#define USER_ID   "torilate"
+
+#ifdef _WIN32
+#define PROG_NAME "torilate.exe"
+#else
+#define PROG_NAME "torilate"
+#endif
+
 
 #endif

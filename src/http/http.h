@@ -64,4 +64,4 @@ int http_post(NetSocket *sock,
               const char *body,
               HttpResponse *response);
 
-#endif /* TORILATE_HTTP_H */
+#endif

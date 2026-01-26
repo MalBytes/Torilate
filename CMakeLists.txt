@@ -13,12 +13,15 @@ set(CMAKE_C_EXTENSIONS OFF)
 # ---- Executable ----
 add_executable(torilate
     src/torilate.c
-    src/socks/socks4.c
+    src/cli/cli.c
     src/http/http.c
+    src/socks/socks4.c
+    lib/argtable3/argtable3.c
 )
 
 # ---- Include paths ----
 target_include_directories(torilate PRIVATE src)
+target_include_directories(torilate PRIVATE lib)
 
 # ---- Platform-specific networking ----
 if (WIN32)

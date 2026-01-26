@@ -1,12 +1,19 @@
 /* 
-    File: torialate.c 
+    File: src/torilate.c
     Author: Trident Apollo
     Date: 23-01-2026
-    Socks4 RFC: https://www.openssh.org/txt/socks4.protocol
-    Description: TODO
+    Reference: None
+    Description:
+        Main entry point for the Torilate application.
+        Responsible for parsing command-line arguments, initializing
+        required subsystems, establishing Tor-backed network tunnels,
+        and dispatching requests to protocol-specific handlers such as
+        HTTP over SOCKS.
 */
 
+
 #include "torilate.h"
+#include "cli/cli.h"
 #include "http/http.h"
 #include "net/socket.h"
 #include "socks/socks4.h"
@@ -14,37 +21,25 @@
 
 int main(int argc, char *argv[]) {
     // Variable Declarations
-    int port;
-    char *host;
-    char *endpoint;
-    NetSocket sock;
+    CliArgsInfo args;
+    NetSocket sock = INVALID_SOCKET;
     int return_code = SUCCESS, status;
-    Socks4AddrType addr_type;
     
-    // Argument validation
-    if (argc < 3) {
-        fprintf(stderr, "Usage: %s <host> <port>\n", argv[0]);
+    
+    // Argument validation (temporary)
+    if (argc == 2 && (strcmp(argv[1], "help") == 0)) {
+        get_help();
+        goto cleanUp;
+    } else if (parse_arguments(argc, argv, &args) != 0) {
+        fprintf(stderr, "Invalid arguments provided. Use --help for usage information.\n");
         return INVALID_ARGS;
     }
-
-    if (strcmp(argv[1], "-ns") == 0) {
-        host = argv[2];
-        port = 80;
-        addr_type = DOMAIN;
-        endpoint = argc == 4 ? argv[3] : "/";
-    } else {
-        host = argv[1];
-        port = atoi(argv[2]);
-        addr_type = IPV4;
-    }
-    
-
-    net_init();
     
     // Connect to TOR
-    status   = net_connect(&sock, PROXY_IP, PROXY_PORT); 
+    net_init(); // Initialize networking subsystem
+    status = net_connect(&sock, TOR_IP, TOR_PORT); 
     if (status != 0) {
-        fprintf(stderr, "Failed to connect to TOR proxy at %s:%d\n", PROXY_IP, PROXY_PORT);
+        fprintf(stderr, "Failed to connect to TOR proxy at %s:%d\n", TOR_IP, TOR_PORT);
         return_code = TOR_CONNECTION_FAILED;
         goto cleanUp;
     }
@@ -52,18 +47,18 @@ int main(int argc, char *argv[]) {
     printf("Connected to TOR successfully!\n\n");
 
     // Establish SOCKS4 connection
-    status = socks4_connect(&sock, host, (uint16_t)port, USER_ID, addr_type);
+    status = socks4_connect(&sock, args.host, (uint16_t)args.port, USER_ID, args.addr_type);
     if (status != 0) {
-        fprintf(stderr, "SOCKS4 connection to %s:%d failed\n", host, port);
+        fprintf(stderr, "SOCKS4 connection to %s:%d failed\n", args.host, args.port);
         return_code = CONNECTION_FAILED;
         goto cleanUp;
     }
 
-    printf("SOCKS4 request granted! Connected to %s:%d through TOR.\n\n", host, port);
+    printf("SOCKS4 request granted! Connected to %s:%d through TOR.\n\n", args.host, args.port);
 
     // Test HTTP GET request
     HttpResponse resp;
-    status = http_get(&sock, host, endpoint, &resp);
+    status = http_get(&sock, args.host, args.endpoint, &resp);
     if (status < 0) {
         fprintf(stderr, "HTTP GET request failed\n");
         return_code = HTTP_REQUEST_FAILED;
@@ -76,7 +71,7 @@ int main(int argc, char *argv[]) {
 
   
 cleanUp:
-    if (sock.handle != -1) {
+    if (is_valid_socket(&sock)) {
         net_close(&sock);
     }
     net_cleanup();
