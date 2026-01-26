@@ -25,6 +25,14 @@ typedef enum {
     SOCKS4_IDENTD_MISMATCH   = 93
 } Socks4Status;
 
+/* Host address type */
+typedef enum {
+    IPV4,
+    IPV6,
+    DOMAIN
+} Socks4AddrType;
+
+
 /*
  * Establish a SOCKS4 CONNECT tunnel.
  *
@@ -41,6 +49,7 @@ typedef enum {
 int socks4_connect(NetSocket *sock,
                    const char *dst_ip,
                    uint16_t dst_port,
-                   const char *user_id);
+                   const char *user_id,
+                   Socks4AddrType addr_type);
 
 #endif /* TORILATE_SOCKS4_H */

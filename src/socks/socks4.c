@@ -17,7 +17,7 @@
 #define SOCKS4_CMD_CONNECT  0x01
 #define SOCKS4_CMD_BIND     0x02
 
-int socks4_connect(NetSocket *sock, const char *dst_ip, uint16_t dst_port, const char *user_id) {
+int socks4_connect(NetSocket *sock, const char *dst_ip, uint16_t dst_port, const char *user_id, Socks4AddrType addr_type) {
     uint8_t request[512];
     uint8_t response[8];
     size_t  offset = 0;
@@ -30,8 +30,13 @@ int socks4_connect(NetSocket *sock, const char *dst_ip, uint16_t dst_port, const
     memcpy(&request[offset], &port_n, sizeof(port_n));
     offset += sizeof(port_n);
 
-    if (net_parse_ipv4(dst_ip, &ip_n) != 0)
-        return -1;
+    if (addr_type == DOMAIN) {
+        if (net_parse_ipv4("0.0.0.1", &ip_n) != 0)
+            return -1;
+    } else {
+        if (net_parse_ipv4(dst_ip, &ip_n) != 0)
+            return -1;
+    }
 
     memcpy(&request[offset], &ip_n, sizeof(ip_n));
     offset += sizeof(ip_n);
@@ -41,7 +46,13 @@ int socks4_connect(NetSocket *sock, const char *dst_ip, uint16_t dst_port, const
         memcpy(&request[offset], user_id, len);
         offset += len;
     }
+    request[offset++] = '\0';
 
+    if (addr_type == DOMAIN) {
+        size_t host_len = strlen(dst_ip);
+        memcpy(&request[offset], dst_ip, host_len);
+        offset += host_len;
+    }
     request[offset++] = '\0';
 
     if (net_send_all(sock, request, offset) != 0)

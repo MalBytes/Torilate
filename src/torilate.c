@@ -14,11 +14,12 @@
 
 int main(int argc, char *argv[]) {
     // Variable Declarations
-    int status;
     int port;
     char *host;
+    char *endpoint;
     NetSocket sock;
-    int return_code = SUCCESS;
+    int return_code = SUCCESS, status;
+    Socks4AddrType addr_type;
     
     // Argument validation
     if (argc < 3) {
@@ -26,8 +27,17 @@ int main(int argc, char *argv[]) {
         return INVALID_ARGS;
     }
 
-    host = argv[1];
-    port = atoi(argv[2]);
+    if (strcmp(argv[1], "-ns") == 0) {
+        host = argv[2];
+        port = 80;
+        addr_type = DOMAIN;
+        endpoint = argc == 4 ? argv[3] : "/";
+    } else {
+        host = argv[1];
+        port = atoi(argv[2]);
+        addr_type = IPV4;
+    }
+    
 
     net_init();
     
@@ -42,7 +52,7 @@ int main(int argc, char *argv[]) {
     printf("Connected to TOR successfully!\n\n");
 
     // Establish SOCKS4 connection
-    status = socks4_connect(&sock, host, (uint16_t)port, USER_ID);
+    status = socks4_connect(&sock, host, (uint16_t)port, USER_ID, addr_type);
     if (status != 0) {
         fprintf(stderr, "SOCKS4 connection to %s:%d failed\n", host, port);
         return_code = CONNECTION_FAILED;
@@ -53,7 +63,7 @@ int main(int argc, char *argv[]) {
 
     // Test HTTP GET request
     HttpResponse resp;
-    status = http_get(&sock, host, "/", &resp);
+    status = http_get(&sock, host, endpoint, &resp);
     if (status < 0) {
         fprintf(stderr, "HTTP GET request failed\n");
         return_code = HTTP_REQUEST_FAILED;
