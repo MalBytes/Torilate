@@ -57,16 +57,16 @@ The resulting binary will be placed in:
 
 ## Usage
 
-### Basic HTTP request through Tor
+### Basic HTTP GET request through Tor
 
 ```bash
-torilate httpbin.org
+torilate get <domain>
 ```
 
 ### Explicit endpoint
 
 ```bash
-torilate httpbin.org <endpoint>
+torilate get <domain> <endpoint>
 ```
 
 ### Verify Tor routing
