@@ -1,0 +1,131 @@
+
+# Torilate
+
+**Torilate** is a lightweight command-line tool that routes network requests through the **Tor network**, allowing users to access remote services via a Tor exit node without modifying the underlying application.
+
+Torilate works by establishing a Tor-backed SOCKS tunnel and issuing requests through it, making it suitable for privacy-aware networking, testing, and research use cases.
+
+---
+
+## Key Features
+
+* Route HTTP requests through the Tor network
+* SOCKS4 / SOCKS4a compliant (proxy-side DNS resolution supported)
+* No local DNS leaks when using hostname mode
+* Cross-platform (Windows and Linux)
+* Minimal dependencies, native C implementation
+* Designed for transparency and correctness
+
+---
+
+## How It Works (High Level)
+
+```
+Torilate → Tor SOCKS Proxy → Tor Exit Node → Target Server
+```
+
+Torilate connects to a locally running Tor SOCKS proxy (e.g. `127.0.0.1:9050`), establishes a tunnel, and sends requests through that tunnel.
+The destination server sees the **Tor exit node’s IP**, not yours.
+
+---
+
+## Requirements
+
+* A running Tor service at `127.0.0.1:9050`
+    * [Download Expert TOR Bunlde](https://www.torproject.org/download/tor/)
+
+* CMake ≥ 3.20
+  
+* A C compiler (GCC or Clang)
+
+---
+
+## Building
+
+```bash
+cmake -S . -B build
+cmake --build build
+```
+
+The resulting binary will be placed in:
+
+```
+./bin/torilate
+```
+
+---
+
+## Usage
+
+### Basic HTTP request through Tor
+
+```bash
+torilate httpbin.org
+```
+
+### Explicit endpoint
+
+```bash
+torilate httpbin.org <endpoint>
+```
+
+### Verify Tor routing
+
+```bash
+torilate httpbin.org \ip
+```
+
+Expected response:
+
+```json
+{
+  "origin": "<tor-exit-ip>"
+}
+```
+
+If the IP differs from your real public IP, the request is successfully routed through Tor.
+
+---
+
+## Security Notes
+
+* Torilate does **not** perform local DNS resolution when using hostname mode
+* Public IP visibility depends on Tor exit nodes
+* HTTPS support requires a TLS layer (planned, not yet implemented)
+* Torilate does not interact with Tor’s ControlPort
+
+---
+
+## Project Status
+
+Torilate is under **active development**.
+
+Planned improvements include:
+
+* HTTPS (TLS) support
+* SOCKS5 support
+* HTTP redirect handling
+* Improved protocol parsing
+* Optional Tor circuit control
+
+See [`ARCHITECTURE.md`](https://github.com/MalBytes/Torilate/blob/main/ARCHITECTURE.md) for design details.
+
+---
+
+## Contributing
+
+Contributions are welcome.
+
+Please see:
+
+* [`ARCHITECTURE.md`](https://github.com/MalBytes/Torilate/blob/main/ARCHITECTURE.md)
+* [`CONTRIBUTING.md`](https://github.com/MalBytes/Torilate/blob/main/CONTRIBUTING.md)
+* [`CODE_OF_CONDUCT.md`](https://github.com/MalBytes/Torilate/blob/main/CODE_OF_CONDUCT.md)
+* [`COMMIT_GUIDELINES.md`](https://github.com/MalBytes/Torilate/blob/main/COMMIT_GUIDLINES.md)
+
+All changes are accepted via Pull Requests.
+
+
+
+
+
