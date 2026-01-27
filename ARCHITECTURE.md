@@ -13,6 +13,9 @@ The codebase is organized by **architectural responsibility**, not by feature ca
 
 ```
 [Project Root]/
+|
+├── bin/                    # Compiled binaries
+├── build/                  # CMake build artifacts
 ├── lib/
 │   └── argtable3/          # Third-party CLI argument parsing library
 │       ├── argtable3.c
@@ -41,12 +44,15 @@ The codebase is organized by **architectural responsibility**, not by feature ca
 │   ├── torilate.c          # Application entry point and orchestration logic
 │   └── torilate.h          # High-level shared definitions
 │
-├── bin/                    # Compiled binaries
-├── build/                  # CMake build artifacts
-├── CMakeLists.txt          # Build configuration
 ├── .gitignore
-├── .editorconfig
-└── ARCHITECTURE.md         # This document
+├── ARCHITECTURE.md         # This document
+├── CMakeLists.txt          # Build configuration
+├── CODE_OF_CONDUCT.md      # Code of conduct 
+├── COMMIT_GUIDLINES.md     # Commit guidlines for contribution
+├── CONTRIBUTING.md         # Contribution guidelines
+├── LICENSE.md              # Copyright and distribution license
+└── README.md               # Readme
+
 ```
 
 ---
@@ -96,7 +102,6 @@ Each layer:
 **Details**
 
 * Uses `argtable3` for argument parsing
-* Contains no networking or protocol logic
 * Produces structured inputs for the application layer
 
 ---
@@ -129,8 +134,8 @@ Each layer:
 
 **Responsibility**
 
-* Implement SOCKS proxy protocols
-* Establish TCP tunnels via a SOCKS proxy (Tor)
+* Implement SOCKS4A proxy protocols
+* Establish TCP tunnels via a TOR
 
 **Supported Protocols**
 
@@ -140,8 +145,7 @@ Each layer:
 **Key Properties**
 
 * RFC-faithful serialization
-* No OS-specific includes
-* No local DNS resolution for SOCKS4a
+* PProxy side DNS resolution for SOCKS4a
 * Operates purely on bytes and buffers
 
 ---
@@ -218,7 +222,7 @@ Torilate does **not** interact with the Tor ControlPort.
 **Supported Compilers**
 
 * GCC (Linux / MinGW)
-* Clang
+<!-- * Clang -->
 
 **Output**
 
