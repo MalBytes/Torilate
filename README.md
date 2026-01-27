@@ -102,11 +102,12 @@ Torilate is under **active development**.
 
 Planned improvements include:
 
-* HTTPS (TLS) support
-* SOCKS5 support
-* HTTP redirect handling
-* Improved protocol parsing
-* Optional Tor circuit control
+- [ ] URI parsing & resolution
+- [ ] HTTPS (TLS) support
+- [ ] HTTP redirect handling
+- [ ] SOCKS5 support
+- [ ] Improved protocol parsing
+- [ ] Optional Tor circuit control
 
 See [`ARCHITECTURE.md`](https://github.com/MalBytes/Torilate/blob/main/ARCHITECTURE.md) for design details.
 
