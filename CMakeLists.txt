@@ -23,7 +23,13 @@ add_executable(torilate
 target_include_directories(torilate PRIVATE src)
 target_include_directories(torilate PRIVATE lib)
 
-# ---- Platform-specific networking ----
+# ---- Math library (libm) ----
+find_library(MATH_LIBRARY m)
+if(MATH_LIBRARY)
+    target_link_libraries(torilate PUBLIC ${MATH_LIBRARY})
+endif()
+
+# ---- Platform-specific network package linking----
 if (WIN32)
     target_link_libraries(torilate PRIVATE ws2_32)
     target_sources(torilate PRIVATE src/net/socket_win32.c)
