@@ -30,9 +30,8 @@ int main(int argc, char *argv[]) {
     if (argc == 2 && (strcmp(argv[1], "help") == 0)) {
         get_help();
         goto cleanUp;
-    } else if (parse_arguments(argc, argv, &args) != 0) {
-        fprintf(stderr, "Invalid arguments provided. Use --help for usage information.\n");
-        return INVALID_ARGS;
+    } else if (return_code = parse_arguments(argc, argv, &args) != 0) {
+        goto cleanUp;
     }
     
     // Connect to TOR

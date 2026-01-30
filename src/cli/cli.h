@@ -21,6 +21,7 @@ typedef struct {
     int port;
     const char *host;
     const char *endpoint;
+    const char flags[MAX_ARG_COUNT];
     Socks4AddrType addr_type;
 } CliArgsInfo;
 
