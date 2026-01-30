@@ -19,27 +19,34 @@
 
 
 // Return Codes
-#define SUCCESS                0
-#define INVALID_ARGS           1
-#define SOCK_INIT_FAILED       2
-#define SOCKET_CREATION_FAILED 3
-#define INVALID_ADDRESS        4
-#define TOR_CONNECTION_FAILED  5
-#define CONNECTION_FAILED      6 
-#define HTTP_REQUEST_FAILED    7
+#define SUCCESS                 0
+#define INVALID_ARGS            1
+#define SOCK_INIT_FAILED        2
+#define SOCKET_CREATION_FAILED  3
+#define INVALID_ADDRESS         4
+#define TOR_CONNECTION_FAILED   5
+#define CONNECTION_FAILED       6 
+#define HTTP_REQUEST_FAILED     7
+#define OUTOFMEMORY             8
 
 
 // Definitions
 
-#define TOR_IP    "127.0.0.1"
-#define TOR_PORT  9050
-#define USER_ID   "torilate"
+#define TOR_IP          "127.0.0.1"
+#define TOR_PORT        9050
+#define USER_ID         "torilate"
+#define MAX_ARG_COUNT   5
 
 #ifdef _WIN32
-#define PROG_NAME "torilate.exe"
+#define PROG_NAME   "torilate.exe"
 #else
-#define PROG_NAME "torilate"
+#define PROG_NAME   "torilate"
 #endif
+
+#define VER_MAJOR   0
+#define VER_MINOR   1
+#define VER_PATCH   2
+#define VER_TAG     "alpha"
 
 
 #endif
