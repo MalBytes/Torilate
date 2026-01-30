@@ -1,6 +1,11 @@
 
 # Torilate
 
+> [!WARNING]
+> Torilate is currently in an **alpha** stage of development.  
+> The software is experimental, under active development, and may undergo significant changes.  
+> Stability, security guarantees, and backward compatibility are **not yet assured**.
+
 **Torilate** is a lightweight command-line tool that routes network requests through the **Tor network**, allowing users to access remote services via a Tor exit node without modifying the underlying application.
 
 Torilate works by establishing a Tor-backed SOCKS tunnel and issuing requests through it, making it suitable for privacy-aware networking, testing, and research use cases.
@@ -29,10 +34,14 @@ The destination server sees the **Tor exit node’s IP**, not yours.
 
 ---
 
+> [!NOTE]
+> No official releases will be published until Torilate reaches the **beta** stage.  
+> Development builds may change rapidly and are intended for testing and evaluation purposes only.
+
 ## Requirements
 
 * A running Tor service at `127.0.0.1:9050`
-    * [Download Expert TOR Bunlde](https://www.torproject.org/download/tor/)
+    * [Download Expert TOR Bundle](https://www.torproject.org/download/tor/)
 
 * CMake ≥ 3.20
   
@@ -72,7 +81,7 @@ torilate get <domain> <endpoint>
 ### Verify Tor routing
 
 ```bash
-torilate httpbin.org \ip
+torilate get httpbin.org \ip
 ```
 
 Expected response:
@@ -122,7 +131,7 @@ Please see:
 * [`ARCHITECTURE.md`](https://github.com/MalBytes/Torilate/blob/main/ARCHITECTURE.md)
 * [`CONTRIBUTING.md`](https://github.com/MalBytes/Torilate/blob/main/CONTRIBUTING.md)
 * [`CODE_OF_CONDUCT.md`](https://github.com/MalBytes/Torilate/blob/main/CODE_OF_CONDUCT.md)
-* [`COMMIT_GUIDELINES.md`](https://github.com/MalBytes/Torilate/blob/main/COMMIT_GUIDLINES.md)
+* [`COMMIT_GUIDELINES.md`](https://github.com/MalBytes/Torilate/blob/main/COMMIT_GUIDELINES.md)
 
 All changes are accepted via Pull Requests.
 
