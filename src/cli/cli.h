@@ -15,6 +15,7 @@
 #include "socks/socks4.h"
 #include "argtable3/argtable3.h"
 
+#define MAX_ARG_COUNT   5
 
 /* Struct for CLI Arguments */
 typedef struct {

@@ -31,17 +31,10 @@
 
 
 // Definitions
-
 #define TOR_IP          "127.0.0.1"
 #define TOR_PORT        9050
-#define USER_ID         "torilate"
-#define MAX_ARG_COUNT   5
+#define PROG_NAME       "torilate"
 
-#ifdef _WIN32
-#define PROG_NAME   "torilate.exe"
-#else
-#define PROG_NAME   "torilate"
-#endif
 
 #define VER_MAJOR   0
 #define VER_MINOR   1

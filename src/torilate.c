@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
     printf("Connected to TOR successfully!\n\n");
 
     // Establish SOCKS4 connection
-    status = socks4_connect(&sock, args.host, (uint16_t)args.port, USER_ID, args.addr_type);
+    status = socks4_connect(&sock, args.host, (uint16_t)args.port, PROG_NAME, args.addr_type);
     if (status != 0) {
         fprintf(stderr, "SOCKS4 connection to %s:%d failed\n", args.host, args.port);
         return_code = CONNECTION_FAILED;
