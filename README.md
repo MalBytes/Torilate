@@ -111,7 +111,7 @@ Torilate is under **active development**.
 
 Planned improvements include:
 
-- [ ] URI parsing & resolution
+- [x] URI parsing & resolution
 - [ ] HTTPS (TLS) support
 - [ ] HTTP redirect handling
 - [ ] SOCKS5 support
