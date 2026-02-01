@@ -12,18 +12,15 @@
 #define TORILATE_CLI_H
 
 #include "torilate.h"
-#include "socks/socks4.h"
+#include "util/util.h"
 #include "argtable3/argtable3.h"
 
 #define MAX_ARG_COUNT   5
 
 /* Struct for CLI Arguments */
 typedef struct {
-    int port;
-    const char *host;
-    const char *endpoint;
+    URI uri;
     const char flags[MAX_ARG_COUNT];
-    Socks4AddrType addr_type;
 } CliArgsInfo;
 
 void get_help();

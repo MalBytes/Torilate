@@ -23,7 +23,7 @@
 #define INVALID_ARGS            1
 #define SOCK_INIT_FAILED        2
 #define SOCKET_CREATION_FAILED  3
-#define INVALID_ADDRESS         4
+#define INVALID_URI             4
 #define TOR_CONNECTION_FAILED   5
 #define CONNECTION_FAILED       6 
 #define HTTP_REQUEST_FAILED     7
@@ -41,5 +41,11 @@
 #define VER_PATCH   2
 #define VER_TAG     "alpha"
 
+
+typedef enum {
+    HTTP,
+    HTTPS,
+    INVALID_SCHEMA,
+} Schema;
 
 #endif

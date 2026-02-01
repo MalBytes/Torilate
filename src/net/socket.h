@@ -22,6 +22,14 @@ typedef struct {
     int handle;
 } NetSocket;
 
+/* Host address type */
+typedef enum {
+    IPV4,
+    IPV6,
+    DOMAIN
+} NetAddrType;
+
+
 /* Lifecycle */
 int  net_init(void);
 void net_cleanup(void);
@@ -36,6 +44,7 @@ uint16_t net_ntohs(uint16_t value);
 uint32_t net_ntohl(uint32_t value);
 uint8_t is_valid_socket(NetSocket *sock);
 
+NetAddrType net_get_addr_type(const char *addr);
 int net_parse_ipv4(const char *ip, uint32_t *out);
 
 /* I/O */

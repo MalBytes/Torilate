@@ -68,6 +68,18 @@ uint8_t is_valid_socket(NetSocket *sock) {
     return sock->handle != -1;
 }
 
+NetAddrType net_get_addr_type(const char *addr) {
+    struct in_addr ipv4_addr;
+    struct in6_addr ipv6_addr;
+
+    if (inet_pton(AF_INET, addr, &ipv4_addr) == 1)
+        return IPV4;
+    if (inet_pton(AF_INET6, addr, &ipv6_addr) == 1)
+        return IPV6;
+
+    return DOMAIN;
+}
+
 int net_parse_ipv4(const char *ip, uint32_t *out) {
     struct in_addr addr;
     if (inet_pton(AF_INET, ip, &addr) != 1)

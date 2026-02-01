@@ -32,7 +32,7 @@ int parse_arguments(int argc, char *argv[], CliArgsInfo *args_info) {
     }
 
     int rv = arg_cmd_dispatch(argv[1], argc, argv, res);
-    printf("%s\n", arg_dstr_cstr(res));
+    printf("%s: %s\n", PROG_NAME, arg_dstr_cstr(res));
     arg_dstr_destroy(res);
     arg_cmd_uninit();
 
@@ -67,41 +67,42 @@ void cli_init() {
     arg_cmd_init();
 }
 
-
 int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
-    arg_rex_t  *cmd        = arg_rex1(NULL,  NULL,  "get", NULL, ARG_REX_ICASE, "perform HTTP GET request");
-    arg_str_t  *domain     = arg_str1(NULL, NULL, "<domain>", "domain to connect to");
-    arg_str_t  *endpoint   = arg_str0(NULL, NULL, "<endpoint>", "endpoint to query [default: /]");
+    arg_rex_t  *cmd        = arg_rex1(NULL,  NULL,  "get", NULL, ARG_REX_ICASE, "send a HTTP GET request");
+    arg_str_t  *uri        = arg_str1(NULL, NULL, "<url>", "url to send request to");
     arg_lit_t  *raw        = arg_lit0("r", "raw", "display raw HTTP response");
     arg_end_t  *end        = arg_end(20);
 
-    void *argtable[] = {cmd, domain, endpoint, raw, end};
+    void *argtable[] = {cmd, uri, raw, end};
     int exitcode = SUCCESS;
     if (arg_nullcheck(argtable) != 0) {
-        fprintf(stderr, "failed to allocate argtable\n");
+        fprintf(stderr, "failed to allocate argtable");
         exitcode = OUTOFMEMORY;
-        goto exit;
+        goto exit_get;
     }
 
     int nerrors = arg_parse(argc, argv, argtable);
     if (arg_make_syntax_err_help_msg(res, "get", 0, nerrors, argtable, end, &exitcode)) {
-        arg_dstr_catf(res, "For more details, use '%s help <command>'\n", PROG_NAME);  
-        goto exit;
+        arg_dstr_catf(res, "For more details, use '%s help <command>'", PROG_NAME);  
+        goto exit_get;
     }
 
+    // Parse URI and set values
     CliArgsInfo *args_info = (CliArgsInfo *)ctx;
-    args_info->host = domain->sval[0];
-    args_info->endpoint = endpoint->count > 0 ? endpoint->sval[0] : "/";
-    args_info->port = 80; // Default HTTP port
-    args_info->addr_type = DOMAIN;
+    int status = parse_uri(uri->sval[0], &args_info->uri);
+    if (status != SUCCESS) {
+        arg_dstr_catf(res, "Protocol '%s' is not supported", args_info->uri.host);
+        exitcode = status;
+        goto exit_get;
+    }
     
     // Set flags
     char *raw_flag = raw->count > 0 ? "r" : "";
     snprintf((char *)args_info->flags, MAX_ARG_COUNT, "%s", raw_flag);
     
-    arg_dstr_catf(res, "Preparing to send HTTP GET request to %s%s/%s via TOR...\n", args_info->host, args_info->endpoint, args_info->endpoint);
+    arg_dstr_catf(res, "Preparing to send HTTP GET request to %s%s/%s via TOR...\n", args_info->uri.host, args_info->uri.endpoint, args_info->uri.endpoint);
 
-exit:
+exit_get:
     arg_freetable(argtable, sizeof(argtable)/sizeof(argtable[0]));
     return exitcode;
 

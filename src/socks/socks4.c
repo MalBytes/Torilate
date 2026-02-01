@@ -17,7 +17,7 @@
 #define SOCKS4_CMD_CONNECT  0x01
 #define SOCKS4_CMD_BIND     0x02
 
-int socks4_connect(NetSocket *sock, const char *dst_ip, uint16_t dst_port, const char *user_id, Socks4AddrType addr_type) {
+int socks4_connect(NetSocket *sock, const char *dst_ip, uint16_t dst_port, const char *user_id, NetAddrType addr_type) {
     uint8_t request[512];
     uint8_t response[8];
     size_t  offset = 0;
