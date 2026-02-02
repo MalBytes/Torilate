@@ -40,6 +40,8 @@ The codebase is organized by **architectural responsibility**, not by feature ca
 │   │   └── socks4.h
 │   │
 │   ├── util/               # Shared helper utilities
+│   │   ├── util.c
+│   │   └── util.h
 │   │
 │   ├── torilate.c          # Application entry point and orchestration logic
 │   └── torilate.h          # High-level shared definitions
@@ -65,6 +67,8 @@ Torilate operates as a **client-side request dispatcher** that establishes Tor-b
 [User CLI]
      ↓
 [CLI Layer]
+     ↓
+[Utility Layer]  (shared helpers)
      ↓
 [HTTP Layer]  (plaintext)
      ↓
@@ -106,7 +110,41 @@ Each layer:
 
 ---
 
-### 3.2. HTTP Layer (`src/http`)
+
+## 3.2. Utility Layer (`src/util`)
+
+**Responsibility**
+
+* Provide **shared, low-level helper functionality**
+* Centralize common operations that do **not belong to any protocol or OS layer**
+* Prevent code duplication across layers
+
+**Design Intent**
+
+The utility layer exists to support **multiple architectural layers** without creating cross-layer coupling.
+It contains **pure helper logic** with no knowledge of:
+
+* networking protocols
+* sockets
+* operating system APIs
+* application control flow
+
+This makes it safe to depend on from **any upper layer**.
+
+**Layering Rules**
+
+The Utility layer must **not depend on**:
+
+* HTTP logic
+* SOCKS logic
+* OS networking APIs
+* Application orchestration
+
+This keeps it **pure, reusable, and testable**.
+
+---
+
+### 3.3. HTTP Layer (`src/http`)
 
 **Responsibility**
 
@@ -130,7 +168,7 @@ Each layer:
 
 ---
 
-### 3.3. SOCKS Layer (`src/socks`)
+### 3.4. SOCKS Layer (`src/socks`)
 
 **Responsibility**
 
@@ -150,7 +188,7 @@ Each layer:
 
 ---
 
-### 3.4. Net Layer (`src/net`)
+### 3.5. Net Layer (`src/net`)
 
 **Responsibility**
 
@@ -171,7 +209,7 @@ Each layer:
 
 ---
 
-### 3.5. Application Entry Point (`src/torilate.c`)
+### 3.6. Application Entry Point (`src/torilate.c`)
 
 **Responsibility**
 
@@ -186,6 +224,8 @@ Each layer:
 * Acts purely as orchestration glue
 
 ---
+
+
 
 ## 4. Data Stores
 
@@ -293,3 +333,11 @@ Planned architectural extensions include:
 
 ---
 
+
+Good evening, Sir. Lenerd here.
+
+You’re right to call this out — **`util` absolutely belongs in Core Components**, not as a footnote. It’s a *supporting infrastructure layer* that multiple layers depend on, and documenting it clarifies dependency direction and design intent.
+
+Below is a **clean, architecture-consistent section** you can drop straight into **Section 3: Core Components**.
+
+---
