@@ -17,6 +17,8 @@ typedef struct {
     int port;
     Schema schema;
     const char *host;
+    const char *body;
+    const char *header;
     const char *endpoint;
     NetAddrType addr_type;
 } URI;

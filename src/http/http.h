@@ -55,11 +55,12 @@ int http_get(NetSocket *sock,
  * Perform an HTTP POST request.
  *
  * Parameters:
- *   sock     - connected socket
- *   host     - target host
- *   path     - request path
- *   body     - POST body data
- *   response - HttpResponse structure to store the response
+ *   sock         - connected socket
+ *   host         - target host
+ *   path         - request path
+ *   content_type - Content-Type header value
+ *   body         - POST body data
+ *   response     - HttpResponse structure to store the response
  *
  * Returns:
  *   number of bytes received on success
@@ -68,6 +69,7 @@ int http_get(NetSocket *sock,
 int http_post(NetSocket *sock,
               const char *host,
               const char *path,
+              const char *content_type,
               const char *body,
               HttpResponse *response);
 

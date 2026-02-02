@@ -69,19 +69,22 @@ The resulting binary will be placed in:
 ### Basic HTTP GET request through Tor
 
 ```bash
-torilate get <domain>
+torilate <command> <url> [options] [flags]
 ```
 
-### Explicit endpoint
+### Command Examples
 
 ```bash
-torilate get <domain> <endpoint>
+torilate get <url> [-r|--raw]
+```
+```bash
+torilate post <url> [-t|--content-type=<content-type>] [-b|--body=<body>] [-r|--raw]
 ```
 
 ### Verify Tor routing
 
 ```bash
-torilate get httpbin.org \ip
+torilate get http://httpbin.org/ip
 ```
 
 Expected response:

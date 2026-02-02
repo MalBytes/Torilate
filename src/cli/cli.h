@@ -17,9 +17,14 @@
 
 #define MAX_ARG_COUNT   5
 
-/* Struct for CLI Arguments */
+/* Types for CLI Arguments */
+typedef enum {
+    CMD_GET,
+    CMD_POST,
+} Command;
 typedef struct {
     URI uri;
+    Command cmd;
     const char flags[MAX_ARG_COUNT];
 } CliArgsInfo;
 

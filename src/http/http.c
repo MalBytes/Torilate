@@ -62,20 +62,26 @@ int http_get(NetSocket *sock, const char *host, const char *path, HttpResponse *
     return http_recv_response(sock, out);
 }
 
-int http_post(NetSocket *sock, const char *host, const char *path, const char *body, HttpResponse *out) {
+int http_post(NetSocket *sock, const char *host, const char *path, const char *content_type, const char *body, HttpResponse *out) {
     char request[4096];
     size_t body_len = body ? strlen(body) : 0;
+    
+    char content_type_header[256];
+    snprintf(content_type_header, 256, 
+             "%s%s%s", 
+             content_type ? "Content-Type: " : "",
+             content_type ? content_type : "",
+             content_type ? "\r\n" : "");
 
     snprintf(request, sizeof(request),
              "POST %s HTTP/1.1\r\n"
              "Host: %s\r\n"
              "User-Agent: Torilate\r\n"
-             "Content-Type: application/x-www-form-urlencoded\r\n"
+             "%s"
              "Content-Length: %zu\r\n"
              "Connection: close\r\n"
              "\r\n%s",
-             path, host, body_len, body ? body : "");
-
+             path, host, content_type_header, body_len, body ? body : "");
     if (http_send(sock, request) != 0)
         return -1;
 

@@ -13,14 +13,13 @@
 /* Function Prototypes */
 void cli_init();
 int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx);
+int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx);
 
-
+/* Function Implementations */
 int parse_arguments(int argc, char *argv[], CliArgsInfo *args_info) {
-    // TODO: Implement full argument parsing using argtable3
-
-    /* Temporary argument parsing */
     cli_init();
     arg_cmd_register("get", cmd_get_proc, "send HTTP GET request", args_info);
+    arg_cmd_register("post", cmd_post_proc, "send HTTP POST request", args_info);
     
     arg_dstr_t res = arg_dstr_create();
     if (argc == 1) {
@@ -39,15 +38,13 @@ int parse_arguments(int argc, char *argv[], CliArgsInfo *args_info) {
     return rv;
 }
 
-
 void get_help() {
-    arg_rex_t  *cmd_get    = arg_rex1(NULL,  NULL,  "get", NULL, ARG_REX_ICASE, "perform HTTP GET request");
-    arg_str_t  *domain     = arg_str1(NULL, NULL, "<domain>", "domain to connect to");
-    arg_str_t  *endpoint   = arg_str0(NULL, NULL, "<endpoint>", "endpoint to query [default: /]");
+    arg_rex_t  *cmd        = arg_rex1(NULL,  NULL,  "get", NULL, ARG_REX_ICASE, "send a HTTP GET request");
+    arg_str_t  *uri        = arg_str1(NULL, NULL, "<url>", "url to send request to");
     arg_lit_t  *raw        = arg_lit0("r", "raw", "display raw HTTP response");
     arg_end_t  *end        = arg_end(20);
 
-    void *argtable[] = {cmd_get, domain, endpoint, raw, end};
+    void *argtable[] = {cmd, uri, raw, end};
     if (arg_nullcheck(argtable) != 0) {
         fprintf(stderr, "Insufficient memory\n");
         return;
@@ -73,8 +70,8 @@ int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
     arg_lit_t  *raw        = arg_lit0("r", "raw", "display raw HTTP response");
     arg_end_t  *end        = arg_end(20);
 
-    void *argtable[] = {cmd, uri, raw, end};
     int exitcode = SUCCESS;
+    void *argtable[] = {cmd, uri, raw, end};
     if (arg_nullcheck(argtable) != 0) {
         fprintf(stderr, "failed to allocate argtable");
         exitcode = OUTOFMEMORY;
@@ -89,6 +86,7 @@ int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
 
     // Parse URI and set values
     CliArgsInfo *args_info = (CliArgsInfo *)ctx;
+    args_info->cmd = CMD_GET;
     int status = parse_uri(uri->sval[0], &args_info->uri);
     if (status != SUCCESS) {
         arg_dstr_catf(res, "Protocol '%s' is not supported", args_info->uri.host);
@@ -105,5 +103,59 @@ int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
 exit_get:
     arg_freetable(argtable, sizeof(argtable)/sizeof(argtable[0]));
     return exitcode;
+}
 
+int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
+    arg_rex_t  *cmd        = arg_rex1(NULL,  NULL,  "post", NULL, ARG_REX_ICASE, "send a HTTP POST request");
+    arg_str_t  *uri        = arg_str1(NULL, NULL, "<url>", "url to send request to");
+    arg_str_t  *header     = arg_str0("t", "content-type", "<content-type>", "Content-Type header for the POST request");
+    arg_str_t  *body       = arg_str0("b", "body", "<body>", "body of the POST request");
+    arg_lit_t  *raw        = arg_lit0("r", "raw", "display raw HTTP response");
+    arg_end_t  *end        = arg_end(20);
+
+    void *argtable[] = {cmd, uri, header, body, raw, end};
+    int exitcode = SUCCESS;
+    if (arg_nullcheck(argtable) != 0) {
+        fprintf(stderr, "failed to allocate argtable");
+        exitcode = OUTOFMEMORY;
+        goto exit_post;
+    }
+
+    int nerrors = arg_parse(argc, argv, argtable);
+    if (arg_make_syntax_err_help_msg(res, "post", 0, nerrors, argtable, end, &exitcode)) {
+        arg_dstr_catf(res, "For more details, use '%s help <command>'", PROG_NAME);  
+        goto exit_post;
+    }
+
+    // Parse URI and set values
+    CliArgsInfo *args_info = (CliArgsInfo *)ctx;
+    args_info->cmd = CMD_POST;
+    int status = parse_uri(uri->sval[0], &args_info->uri);
+    if (status != SUCCESS) {
+        arg_dstr_catf(res, "Protocol '%s' is not supported", args_info->uri.host);
+        exitcode = status;
+        goto exit_post;
+    }
+
+    // Set header and body
+    if (header->count > 0) {
+        args_info->uri.header = header->sval[0];
+    } else {
+        args_info->uri.header = NULL;
+    }
+    if (body->count > 0) {
+        args_info->uri.body = body->sval[0];
+    } else {
+        args_info->uri.body = NULL;
+    }
+    
+    // Set flags
+    char *raw_flag = raw->count > 0 ? "r" : "";
+    snprintf((char *)args_info->flags, MAX_ARG_COUNT, "%s", raw_flag);
+    
+    arg_dstr_catf(res, "Preparing to send HTTP POST request to %s%s/%s via TOR...\n", args_info->uri.host, args_info->uri.endpoint, args_info->uri.endpoint);
+
+exit_post:
+    arg_freetable(argtable, sizeof(argtable)/sizeof(argtable[0]));
+    return exitcode;
 }

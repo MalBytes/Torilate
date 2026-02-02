@@ -59,18 +59,40 @@ int main(int argc, char *argv[]) {
 
     printf("SOCKS4 request granted! Connected to %s:%d through TOR.\n\n", args.uri.host, args.uri.port);
 
-    // Test HTTP GET request
+    // Send HTTP request based on command
     HttpResponse resp;
-    status = http_get(&sock, args.uri.host, args.uri.endpoint, &resp);
-    if (status < 0) {
-        fprintf(stderr, "HTTP GET request failed\n");
-        return_code = HTTP_REQUEST_FAILED;
-        goto cleanUp;
-    }
+    switch (args.cmd) {
+        case CMD_GET:
+            status = http_get(&sock, args.uri.host, args.uri.endpoint, &resp);
+            if (status < 0) {
+                fprintf(stderr, "%s: HTTP GET request failed\n", PROG_NAME);
+                return_code = HTTP_REQUEST_FAILED;
+                goto cleanUp;
+            }
+            printf("HTTP GET request successful! Received %d bytes.\n", status);
+            printf("Status Code: %d\n\n", resp.status_code);
+            printf("Body:\n\n%s\n", resp.raw);
+            break;
 
-    printf("HTTP GET request successful! Received %d bytes.\n", status);
-    printf("Response Status Code: %d\n\n", resp.status_code);
-    printf("Response Body:\n\n%s\n", resp.raw);
+        case CMD_POST:
+            status = http_post(&sock, args.uri.host, args.uri.endpoint, args.uri.header, args.uri.body, &resp);
+            if (status < 0) {
+                fprintf(stderr, "%s: HTTP POST request failed\n", PROG_NAME);
+                return_code = HTTP_REQUEST_FAILED;
+                goto cleanUp;
+            }
+            printf("HTTP POST request successful! Received %d bytes.\n", status);
+            printf("Status Code: %d\n\n", resp.status_code);
+            printf("Body:\n\n%s\n", resp.raw);
+            break;
+
+        default:
+            fprintf(stderr, "%s: Unsupported command\n", PROG_NAME);
+            return_code = INVALID_ARGS;
+            goto cleanUp;
+    }
+    
+
 
     
 cleanUp:

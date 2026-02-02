@@ -3,4 +3,6 @@
 /bin
 
 # Ignore workspace files
+.vscode/
+.editorconfig
 *.code-workspace
