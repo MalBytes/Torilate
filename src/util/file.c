@@ -11,8 +11,8 @@
         handling.
 */
 
-#include <errno.h>
 #include "util/util.h"
+#include "error/error.h"
 
 
 int write_to(const char *file_name, const char *data, size_t len) {

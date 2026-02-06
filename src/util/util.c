@@ -7,9 +7,9 @@
         Common utility function implementations for Torilate.
 */
 
-#include <string.h>
-#include <stdlib.h>
+
 #include "util/util.h"
+#include "error/error.h"
 
 
 char *ut_strdup(const char *s) {

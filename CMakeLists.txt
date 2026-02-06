@@ -17,6 +17,7 @@ add_executable(torilate
     src/http/http.c
     src/util/util.c
     src/util/file.c
+    src/error/error.c
     src/socks/socks4.c
     lib/argtable3/argtable3.c
 )

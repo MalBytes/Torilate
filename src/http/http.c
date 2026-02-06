@@ -11,9 +11,7 @@
 */
 
 #include "http/http.h"
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include "error/error.h"
 
 static int http_send(NetSocket *sock, const char *request) {
     size_t len = strlen(request);

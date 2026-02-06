@@ -14,18 +14,24 @@
 
 #include "torilate.h"
 #include "cli/cli.h"
+#include "util/util.h"
 #include "http/http.h"
 #include "net/socket.h"
+#include "error/error.h"
 #include "socks/socks4.h"
 
 
 int main(int argc, char *argv[]) {
     // Variable Declarations
+    int status;
+    Error error;
     CliArgsInfo args;
-    NetSocket sock = INVALID_SOCKET;
-    int return_code = SUCCESS, status;
     int64_t bytes_received;
-    
+    NetSocket sock = INVALID_SOCKET;
+
+    // Initialize error structure
+    error.code = SUCCESS;
+    memset(error.message, 0, sizeof(error.message));
     
     // Argument validation (temporary)
     if (argc == 2 && (strcmp(argv[1], "help") == 0)) {
@@ -35,7 +41,7 @@ int main(int argc, char *argv[]) {
 
     status = parse_arguments(argc, argv, &args);
     if (status != SUCCESS) {
-        return_code = status;
+        error.code = status;
         goto cleanUp;
     }
     
@@ -43,22 +49,18 @@ int main(int argc, char *argv[]) {
     net_init(); // Initialize networking subsystem
     status = net_connect(&sock, TOR_IP, TOR_PORT); 
     if (status != SUCCESS) {
-        fprintf(stderr, "Failed to connect to TOR proxy at %s:%d\n", TOR_IP, TOR_PORT);
-        return_code = ERR_TOR_CONNECTION_FAILED;
+        snprintf(error.message, sizeof(error.message), "Cannot connect to TOR at %s:%d", TOR_IP, TOR_PORT);
+        error.code = ERR_TOR_CONNECTION_FAILED;
         goto cleanUp;
     }
-    
-    printf("Connected to TOR successfully!\n\n");
 
     // Establish SOCKS4 connection
     status = socks4_connect(&sock, args.uri.host, (uint16_t)args.uri.port, PROG_NAME, args.uri.addr_type);
     if (status != SUCCESS) {
-        fprintf(stderr, "SOCKS4 connection to %s:%d failed\n", args.uri.host, args.uri.port);
-        return_code = ERR_CONNECTION_FAILED;
+        snprintf(error.message, sizeof(error.message), "SOCKS4 connection to %s:%d failed", args.uri.host, args.uri.port);
+        error.code = ERR_CONNECTION_FAILED;
         goto cleanUp;
     }
-
-    printf("SOCKS4 request granted! Connected to %s:%d through TOR.\n\n", args.uri.host, args.uri.port);
 
     // Send HTTP request based on command
     HttpResponse resp;
@@ -69,8 +71,8 @@ int main(int argc, char *argv[]) {
         case CMD_GET:
             bytes_received = http_get(&sock, args.uri.host, args.uri.endpoint, &resp);
             if (bytes_received < 0) {
-                fprintf(stderr, "%s: HTTP GET request failed\n", PROG_NAME);
-                return_code = ERR_HTTP_REQUEST_FAILED;
+                snprintf(error.message, sizeof(error.message), "HTTP GET request to %s:%d failed", args.uri.host, args.uri.port);
+                error.code = ERR_HTTP_REQUEST_FAILED;
                 goto cleanUp;
             }
             printf("HTTP GET request successful! Received %lld bytes.\n", bytes_received);
@@ -79,8 +81,8 @@ int main(int argc, char *argv[]) {
             if (args.output_file) {
                 int write_status = write_to(args.output_file, resp.raw, bytes_received);
                 if (write_status != SUCCESS) {
-                    fprintf(stderr, "%s: Failed to write response to file\n", PROG_NAME);
-                    return_code = write_status;
+                    snprintf(error.message, sizeof(error.message), "Failed to write response to file %s", args.output_file);
+                    error.code = write_status;
                     goto cleanUp;
                 }
                 printf("%s: Response written to %s\n", PROG_NAME, args.output_file);
@@ -96,8 +98,8 @@ int main(int argc, char *argv[]) {
             if (args.input_file) {
                 int read_status = read_from(args.input_file, &body_owned, NULL);
                 if (read_status != SUCCESS) {
-                    fprintf(stderr, "%s: Failed to read file\n", PROG_NAME);
-                    return_code = read_status;
+                    snprintf(error.message, sizeof(error.message), "Failed to read file %s", args.input_file);
+                    error.code = read_status;
                     goto cleanUp;
                 }
                 body = body_owned;
@@ -107,8 +109,8 @@ int main(int argc, char *argv[]) {
 
             bytes_received = http_post(&sock, args.uri.host, args.uri.endpoint, args.uri.header, body, &resp);
             if (bytes_received < 0) {
-                fprintf(stderr, "%s: HTTP POST request failed\n", PROG_NAME);
-                return_code = ERR_HTTP_REQUEST_FAILED;
+                snprintf(error.message, sizeof(error.message), "HTTP POST request to %s:%d failed", args.uri.host, args.uri.port);
+                error.code = ERR_HTTP_REQUEST_FAILED;
                 goto cleanUp;
             }
             free(body_owned); // free if allocated
@@ -118,8 +120,8 @@ int main(int argc, char *argv[]) {
             if (args.output_file) {
                 int write_status = write_to(args.output_file, resp.raw, bytes_received);
                 if (write_status != SUCCESS) {
-                    fprintf(stderr, "%s: Failed to write response to file\n", PROG_NAME);
-                    return_code = write_status;
+                    snprintf(error.message, sizeof(error.message), "Failed to write response to file %s", args.output_file);
+                    error.code = write_status;
                     goto cleanUp;
                 }
                 printf("%s: Response written to %s\n", PROG_NAME, args.output_file);
@@ -131,8 +133,8 @@ int main(int argc, char *argv[]) {
             break;
 
         default:
-            fprintf(stderr, "%s: Unsupported command\n", PROG_NAME);
-            return_code = ERR_INVALID_ARGS;
+            snprintf(error.message, sizeof(error.message), "Unsupported command");
+            error.code = ERR_INVALID_ARGS;
             goto cleanUp;
     }
     
@@ -144,5 +146,10 @@ cleanUp:
     free((void*) args.uri.host);
     free((void*) args.uri.endpoint);
 
-    return return_code;
+    // Print error message
+    if (error.code != SUCCESS) {
+        printf("%s\n", get_err_msg(&error));
+    }
+
+    return error.code;
 }

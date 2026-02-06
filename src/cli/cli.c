@@ -9,6 +9,7 @@
 */
 
 #include "cli/cli.h"
+#include "error/error.h"
 
 /* Function Prototypes */
 void cli_init();
