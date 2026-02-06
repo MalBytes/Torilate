@@ -27,7 +27,7 @@ int parse_arguments(int argc, char *argv[], CliArgsInfo *args_info) {
         fprintf(stderr, "%s", arg_dstr_cstr(res));
         arg_dstr_destroy(res);
         arg_cmd_uninit();
-        return INVALID_ARGS;
+        return ERR_INVALID_ARGS;
     }
 
     int rv = arg_cmd_dispatch(argv[1], argc, argv, res);
@@ -65,16 +65,17 @@ void cli_init() {
 }
 
 int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
-    arg_rex_t  *cmd        = arg_rex1(NULL,  NULL,  "get", NULL, ARG_REX_ICASE, "send a HTTP GET request");
-    arg_str_t  *uri        = arg_str1(NULL, NULL, "<url>", "url to send request to");
-    arg_lit_t  *raw        = arg_lit0("r", "raw", "display raw HTTP response");
-    arg_end_t  *end        = arg_end(20);
+    arg_rex_t  *cmd         = arg_rex1(NULL,  NULL,  "get", NULL, ARG_REX_ICASE, "send a HTTP GET request");
+    arg_str_t  *uri         = arg_str1(NULL, NULL, "<url>", "url to send request to");
+    arg_str_t  *output_file = arg_str0("o", "output", "<output_file>", "output file to store the GET response");
+    arg_lit_t  *raw         = arg_lit0("r", "raw", "display raw HTTP response");
+    arg_end_t  *end         = arg_end(20);
 
     int exitcode = SUCCESS;
-    void *argtable[] = {cmd, uri, raw, end};
+    void *argtable[] = {cmd, uri, output_file, raw, end};
     if (arg_nullcheck(argtable) != 0) {
         fprintf(stderr, "failed to allocate argtable");
-        exitcode = OUTOFMEMORY;
+        exitcode = ERR_OUTOFMEMORY;
         goto exit_get;
     }
 
@@ -93,6 +94,13 @@ int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
         exitcode = status;
         goto exit_get;
     }
+
+    // Set output file
+    if (output_file->count > 0) {
+        args_info->output_file = output_file->sval[0];
+    } else {
+        args_info->output_file = NULL;
+    }
     
     // Set flags
     char *raw_flag = raw->count > 0 ? "r" : "";
@@ -106,18 +114,20 @@ exit_get:
 }
 
 int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
-    arg_rex_t  *cmd        = arg_rex1(NULL,  NULL,  "post", NULL, ARG_REX_ICASE, "send a HTTP POST request");
-    arg_str_t  *uri        = arg_str1(NULL, NULL, "<url>", "url to send request to");
-    arg_str_t  *header     = arg_str0("t", "content-type", "<content-type>", "Content-Type header for the POST request");
-    arg_str_t  *body       = arg_str0("b", "body", "<body>", "body of the POST request");
-    arg_lit_t  *raw        = arg_lit0("r", "raw", "display raw HTTP response");
-    arg_end_t  *end        = arg_end(20);
+    arg_rex_t  *cmd         = arg_rex1(NULL,  NULL,  "post", NULL, ARG_REX_ICASE, "send a HTTP POST request");
+    arg_str_t  *uri         = arg_str1(NULL, NULL, "<url>", "url to send request to");
+    arg_str_t  *header      = arg_str0("t", "content-type", "<content-type>", "Content-Type header for the POST request");
+    arg_str_t  *body        = arg_str0("b", "body", "<body>", "body of the POST request");
+    arg_str_t  *input_file  = arg_str0("i", "input", "<input_file>", "input file for the POST request body");
+    arg_str_t  *output_file = arg_str0("o", "output", "<output_file>", "output file to store the POST response");
+    arg_lit_t  *raw         = arg_lit0("r", "raw", "display raw HTTP response");
+    arg_end_t  *end         = arg_end(20);
 
-    void *argtable[] = {cmd, uri, header, body, raw, end};
+    void *argtable[] = {cmd, uri, header, body, input_file, output_file, raw, end};
     int exitcode = SUCCESS;
     if (arg_nullcheck(argtable) != 0) {
         fprintf(stderr, "failed to allocate argtable");
-        exitcode = OUTOFMEMORY;
+        exitcode = ERR_OUTOFMEMORY;
         goto exit_post;
     }
 
@@ -148,6 +158,19 @@ int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
     } else {
         args_info->uri.body = NULL;
     }
+
+    // Set input & output files
+    if (input_file->count > 0) {
+        args_info->input_file = input_file->sval[0];
+    } else {
+        args_info->input_file = NULL;
+    }
+
+    if (output_file->count > 0) {
+        args_info->output_file = output_file->sval[0];
+    } else {
+        args_info->output_file = NULL;
+    }   
     
     // Set flags
     char *raw_flag = raw->count > 0 ? "r" : "";

@@ -23,8 +23,15 @@ typedef struct {
     NetAddrType addr_type;
 } URI;
 
+// Memory management utilities
 char *strdup(const char *s);
 char *strndup(const char *s, size_t n);
+
+// Parsing utilities
 int parse_uri(const char *uri, URI *out);
+
+// File handling utilities
+int write_to(const char *file_name, const char *data, size_t len);
+int read_from(const char *file_name, char **buffer, size_t *out_len);
 
 #endif

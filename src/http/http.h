@@ -114,7 +114,7 @@ typedef struct {
  *   number of bytes received on success
  *  -1 on error
  */
-int http_get(NetSocket *sock,
+int64_t http_get(NetSocket *sock,
              const char *host,
              const char *path,
              HttpResponse *response);
@@ -134,7 +134,7 @@ int http_get(NetSocket *sock,
  *   number of bytes received on success
  *  -1 on error
  */
-int http_post(NetSocket *sock,
+int64_t http_post(NetSocket *sock,
               const char *host,
               const char *path,
               const char *content_type,

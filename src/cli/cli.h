@@ -25,6 +25,8 @@ typedef enum {
 typedef struct {
     URI uri;
     Command cmd;
+    const char *input_file;
+    const char *output_file;
     const char flags[MAX_ARG_COUNT];
 } CliArgsInfo;
 

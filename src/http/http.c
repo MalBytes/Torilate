@@ -20,7 +20,7 @@ static int http_send(NetSocket *sock, const char *request) {
     return net_send_all(sock, request, len);
 }
 
-static int http_recv_response(NetSocket *sock, HttpResponse *out) {
+static int64_t http_recv_response(NetSocket *sock, HttpResponse *out) {
     int total = 0;
     out->error_code = 0;
 
@@ -54,7 +54,7 @@ static int http_recv_response(NetSocket *sock, HttpResponse *out) {
     return total;
 }
 
-int http_get(NetSocket *sock, const char *host, const char *path, HttpResponse *out) {
+int64_t http_get(NetSocket *sock, const char *host, const char *path, HttpResponse *out) {
     char request[2048];
 
     snprintf(request, sizeof(request),
@@ -71,7 +71,7 @@ int http_get(NetSocket *sock, const char *host, const char *path, HttpResponse *
     return http_recv_response(sock, out);
 }
 
-int http_post(NetSocket *sock, const char *host, const char *path, const char *content_type, const char *body, HttpResponse *out) {
+int64_t http_post(NetSocket *sock, const char *host, const char *path, const char *content_type, const char *body, HttpResponse *out) {
     char request[4096];
     size_t body_len = body ? strlen(body) : 0;
     

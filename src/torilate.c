@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
     CliArgsInfo args;
     NetSocket sock = INVALID_SOCKET;
     int return_code = SUCCESS, status;
+    int64_t bytes_received;
     
     
     // Argument validation (temporary)
@@ -61,29 +62,72 @@ int main(int argc, char *argv[]) {
 
     // Send HTTP request based on command
     HttpResponse resp;
+    char *body_owned = NULL; // owns memory (if allocated)
+    const char *body = NULL; // read-only view
+
     switch (args.cmd) {
         case CMD_GET:
-            status = http_get(&sock, args.uri.host, args.uri.endpoint, &resp);
-            if (status < 0) {
+            bytes_received = http_get(&sock, args.uri.host, args.uri.endpoint, &resp);
+            if (bytes_received < 0) {
                 fprintf(stderr, "%s: HTTP GET request failed\n", PROG_NAME);
                 return_code = ERR_HTTP_REQUEST_FAILED;
                 goto cleanUp;
             }
-            printf("HTTP GET request successful! Received %d bytes.\n", status);
-            printf("Status Code: %d\n\n", resp.status_code);
-            printf("Body:\n\n%s\n", resp.raw);
+            printf("HTTP GET request successful! Received %lld bytes.\n", bytes_received);
+            
+            // Output response
+            if (args.output_file) {
+                int write_status = write_to(args.output_file, resp.raw, bytes_received);
+                if (write_status != SUCCESS) {
+                    fprintf(stderr, "%s: Failed to write response to file\n", PROG_NAME);
+                    return_code = write_status;
+                    goto cleanUp;
+                }
+                printf("%s: Response written to %s\n", PROG_NAME, args.output_file);
+                break;
+            } else {
+                printf("Status Code: %d\n\n", resp.status_code);
+                printf("Body:\n\n%s\n", resp.raw);
+            }
             break;
 
         case CMD_POST:
-            status = http_post(&sock, args.uri.host, args.uri.endpoint, args.uri.header, args.uri.body, &resp);
-            if (status < 0) {
+            // Read body
+            if (args.input_file) {
+                int read_status = read_from(args.input_file, &body_owned, NULL);
+                if (read_status != SUCCESS) {
+                    fprintf(stderr, "%s: Failed to read file\n", PROG_NAME);
+                    return_code = read_status;
+                    goto cleanUp;
+                }
+                body = body_owned;
+            } else {
+                body = args.uri.body ? args.uri.body : "";
+            }
+
+            bytes_received = http_post(&sock, args.uri.host, args.uri.endpoint, args.uri.header, body, &resp);
+            if (bytes_received < 0) {
                 fprintf(stderr, "%s: HTTP POST request failed\n", PROG_NAME);
                 return_code = ERR_HTTP_REQUEST_FAILED;
                 goto cleanUp;
             }
-            printf("HTTP POST request successful! Received %d bytes.\n", status);
-            printf("Status Code: %d\n\n", resp.status_code);
-            printf("Body:\n\n%s\n", resp.raw);
+            free(body_owned); // free if allocated
+            printf("HTTP POST request successful! Received %lld bytes.\n", bytes_received);
+
+            // Output response
+            if (args.output_file) {
+                int write_status = write_to(args.output_file, resp.raw, bytes_received);
+                if (write_status != SUCCESS) {
+                    fprintf(stderr, "%s: Failed to write response to file\n", PROG_NAME);
+                    return_code = write_status;
+                    goto cleanUp;
+                }
+                printf("%s: Response written to %s\n", PROG_NAME, args.output_file);
+                break;
+            } else {
+                printf("Status Code: %d\n\n", resp.status_code);
+                printf("Body:\n\n%s\n", resp.raw);
+            }
             break;
 
         default:
@@ -91,9 +135,6 @@ int main(int argc, char *argv[]) {
             return_code = ERR_INVALID_ARGS;
             goto cleanUp;
     }
-    
-
-
     
 cleanUp:
     if (is_valid_socket(&sock)) {

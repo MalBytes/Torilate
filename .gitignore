@@ -6,3 +6,6 @@
 .vscode/
 .editorconfig
 *.code-workspace
+
+# Ignore Dev files
+.dev/
