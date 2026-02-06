@@ -26,6 +26,10 @@ The codebase is organized by **architectural responsibility**, not by feature ca
 │   │   ├── cli.c
 │   │   └── cli.h
 │   │
+│   ├── error/               # Error codes and handling utilities
+│   │   ├── error.c
+│   │   └── error.h
+│   │
 │   ├── http/               # HTTP/1.1 client implementation (plaintext)
 │   │   ├── http.c
 │   │   └── http.h
@@ -209,7 +213,27 @@ This keeps it **pure, reusable, and testable**.
 
 ---
 
-### 3.6. Application Entry Point (`src/torilate.c`)
+## 3.6. Error Handling Layer (`src/error`)
+
+**Responsibility**
+
+* Define shared error codes
+* Provide consistent, human-readable error messages
+
+**Details**
+
+* Exposes a central `Error` structure containing:
+
+  * a numeric error code
+  * an optional contextual message
+* Maps error codes to canonical descriptions
+* Formats errors for user-facing output
+
+The Error layer is **dependency-free** and may be used by any component without introducing cross-layer coupling.
+
+---
+
+### 3.7. Application Entry Point (`src/torilate.c`)
 
 **Responsibility**
 
