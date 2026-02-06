@@ -52,7 +52,7 @@ int parse_uri(const char *uri, URI *out) {
         if (format != NULL) {
             out->schema = INVALID_SCHEMA;
             out->host = ut_strndup(uri, format - uri);
-            return INVALID_URI;
+            return ERR_INVALID_URI;
         }
         out->schema = HTTP; // Default to HTTP
         host_start = (char *)uri;

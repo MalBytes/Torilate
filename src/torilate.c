@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
     status = net_connect(&sock, TOR_IP, TOR_PORT); 
     if (status != SUCCESS) {
         fprintf(stderr, "Failed to connect to TOR proxy at %s:%d\n", TOR_IP, TOR_PORT);
-        return_code = TOR_CONNECTION_FAILED;
+        return_code = ERR_TOR_CONNECTION_FAILED;
         goto cleanUp;
     }
     
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     status = socks4_connect(&sock, args.uri.host, (uint16_t)args.uri.port, PROG_NAME, args.uri.addr_type);
     if (status != SUCCESS) {
         fprintf(stderr, "SOCKS4 connection to %s:%d failed\n", args.uri.host, args.uri.port);
-        return_code = CONNECTION_FAILED;
+        return_code = ERR_CONNECTION_FAILED;
         goto cleanUp;
     }
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
             status = http_get(&sock, args.uri.host, args.uri.endpoint, &resp);
             if (status < 0) {
                 fprintf(stderr, "%s: HTTP GET request failed\n", PROG_NAME);
-                return_code = HTTP_REQUEST_FAILED;
+                return_code = ERR_HTTP_REQUEST_FAILED;
                 goto cleanUp;
             }
             printf("HTTP GET request successful! Received %d bytes.\n", status);
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
             status = http_post(&sock, args.uri.host, args.uri.endpoint, args.uri.header, args.uri.body, &resp);
             if (status < 0) {
                 fprintf(stderr, "%s: HTTP POST request failed\n", PROG_NAME);
-                return_code = HTTP_REQUEST_FAILED;
+                return_code = ERR_HTTP_REQUEST_FAILED;
                 goto cleanUp;
             }
             printf("HTTP POST request successful! Received %d bytes.\n", status);
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
 
         default:
             fprintf(stderr, "%s: Unsupported command\n", PROG_NAME);
-            return_code = INVALID_ARGS;
+            return_code = ERR_INVALID_ARGS;
             goto cleanUp;
     }
     
