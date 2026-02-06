@@ -1,7 +1,7 @@
 /* 
     File: src/util/file.c
     Author: Trident Apollo
-    Date: 23-01-2026
+    Date: 6-02-2026
     Reference:
         - cppreference: https://en.cppreference.com/w/c/io.html
         - GFG: https://www.geeksforgeeks.org/c/basics-file-handling-c/
