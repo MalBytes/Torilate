@@ -31,6 +31,7 @@
 #define ERR_NO_PERMISSION           9
 #define ERR_FILE_NOT_FOUND          10
 #define ERR_IO                      11
+#define ERR_BAD_RESPONSE            12
 
 
 // Definitions

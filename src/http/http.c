@@ -1,9 +1,10 @@
 /* 
-    File: http.c
+    File: src/http/http.c
     Author: Trident Apollo
     Date: 23-01-2026
     Reference:
-        - HTTP/1.1: RFC 7230, RFC 7231
+        - HTTP/1.1 (RFC 7231): https://datatracker.ietf.org/doc/html/rfc7231
+        - HTTP/1.1 (RFC 7230): https://datatracker.ietf.org/doc/html/rfc7230
     Description:
         Minimal HTTP/1.1 request implementation (GET, POST)
         for use over Torilate network tunnels.
@@ -21,6 +22,7 @@ static int http_send(NetSocket *sock, const char *request) {
 
 static int http_recv_response(NetSocket *sock, HttpResponse *out) {
     int total = 0;
+    out->error_code = 0;
 
     while (total < HTTP_MAX_RESPONSE - 1) {
         int n = net_recv(sock, out->raw + total, HTTP_MAX_RESPONSE - 1 - total);
@@ -37,11 +39,18 @@ static int http_recv_response(NetSocket *sock, HttpResponse *out) {
     out->raw[total] = '\0';
 
     /* Parse status code */
-    char *status = strstr(out->raw, "HTTP/");
-    if (!status)
-        return -1;
+    int code;
+    char *status = out->raw;
+    while (*status == ' ' || *status == '\r' || *status == '\n')
+        status++;
 
-    out->status_code = atoi(status + 9);
+    if (sscanf(status, "HTTP/%*d.%*d %d", &code) != 1 || code < 100 || code > 599) {
+        out->error_code = ERR_BAD_RESPONSE;
+        return -1;
+    }
+
+    out->status_code = (HttpStatusCode)code;
+
     return total;
 }
 
