@@ -18,9 +18,9 @@ static int http_send(NetSocket *sock, const char *request) {
     return net_send_all(sock, request, len);
 }
 
-static int64_t http_recv_response(NetSocket *sock, HttpResponse *out) {
+static int http_recv_response(NetSocket *sock, HttpResponse *out) {
     int total = 0;
-    out->error_code = 0;
+    out->bytes_received = 0;
 
     while (total < HTTP_MAX_RESPONSE - 1) {
         int n = net_recv(sock, out->raw + total, HTTP_MAX_RESPONSE - 1 - total);
@@ -43,16 +43,16 @@ static int64_t http_recv_response(NetSocket *sock, HttpResponse *out) {
         status++;
 
     if (sscanf(status, "HTTP/%*d.%*d %d", &code) != 1 || code < 100 || code > 599) {
-        out->error_code = ERR_BAD_RESPONSE;
-        return -1;
+        return ERR_BAD_RESPONSE;
     }
 
     out->status_code = (HttpStatusCode)code;
+    out->bytes_received = total;
 
-    return total;
+    return SUCCESS;
 }
 
-int64_t http_get(NetSocket *sock, const char *host, const char *path, HttpResponse *out) {
+int http_get(NetSocket *sock, const char *host, const char *path, HttpResponse *out) {
     char request[2048];
 
     snprintf(request, sizeof(request),
@@ -69,7 +69,7 @@ int64_t http_get(NetSocket *sock, const char *host, const char *path, HttpRespon
     return http_recv_response(sock, out);
 }
 
-int64_t http_post(NetSocket *sock, const char *host, const char *path, const char *content_type, const char *body, HttpResponse *out) {
+int http_post(NetSocket *sock, const char *host, const char *path, const char *content_type, const char *body, HttpResponse *out) {
     char request[4096];
     size_t body_len = body ? strlen(body) : 0;
     

@@ -24,11 +24,12 @@ typedef struct {
 } URI;
 
 // Memory management utilities
-char *strdup(const char *s);
-char *strndup(const char *s, size_t n);
+char *ut_strdup(const char *s);
+char *ut_strndup(const char *s, size_t n);
 
 // Parsing utilities
 int parse_uri(const char *uri, URI *out);
+int parse_http_response(const char *response, char *out, size_t out_size);
 
 // File handling utilities
 int write_to(const char *file_name, const char *data, size_t len);

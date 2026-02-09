@@ -11,7 +11,6 @@
         HTTP over SOCKS.
 */
 
-
 #include "torilate.h"
 #include "cli/cli.h"
 #include "util/util.h"
@@ -26,7 +25,6 @@ int main(int argc, char *argv[]) {
     int status;
     Error error;
     CliArgsInfo args;
-    int64_t bytes_received;
     NetSocket sock = INVALID_SOCKET;
 
     // Initialize error structure
@@ -69,17 +67,17 @@ int main(int argc, char *argv[]) {
 
     switch (args.cmd) {
         case CMD_GET:
-            bytes_received = http_get(&sock, args.uri.host, args.uri.endpoint, &resp);
-            if (bytes_received < 0) {
+            status = http_get(&sock, args.uri.host, args.uri.endpoint, &resp);
+            if (status != SUCCESS) {
                 snprintf(error.message, sizeof(error.message), "HTTP GET request to %s:%d failed", args.uri.host, args.uri.port);
                 error.code = ERR_HTTP_REQUEST_FAILED;
                 goto cleanUp;
             }
-            printf("HTTP GET request successful! Received %lld bytes.\n", bytes_received);
+            printf("HTTP GET request successful! Received %llu bytes.\n", resp.bytes_received);
             
             // Output response
             if (args.output_file) {
-                int write_status = write_to(args.output_file, resp.raw, bytes_received);
+                int write_status = write_to(args.output_file, resp.raw, resp.bytes_received);
                 if (write_status != SUCCESS) {
                     snprintf(error.message, sizeof(error.message), "Failed to write response to file %s", args.output_file);
                     error.code = write_status;
@@ -107,18 +105,18 @@ int main(int argc, char *argv[]) {
                 body = args.uri.body ? args.uri.body : "";
             }
 
-            bytes_received = http_post(&sock, args.uri.host, args.uri.endpoint, args.uri.header, body, &resp);
-            if (bytes_received < 0) {
+            status = http_post(&sock, args.uri.host, args.uri.endpoint, args.uri.header, body, &resp);
+            if (status != SUCCESS) {
                 snprintf(error.message, sizeof(error.message), "HTTP POST request to %s:%d failed", args.uri.host, args.uri.port);
                 error.code = ERR_HTTP_REQUEST_FAILED;
                 goto cleanUp;
             }
             free(body_owned); // free if allocated
-            printf("HTTP POST request successful! Received %lld bytes.\n", bytes_received);
+            printf("HTTP POST request successful! Received %llu bytes.\n", resp.bytes_received);
 
             // Output response
             if (args.output_file) {
-                int write_status = write_to(args.output_file, resp.raw, bytes_received);
+                int write_status = write_to(args.output_file, resp.raw, resp.bytes_received);
                 if (write_status != SUCCESS) {
                     snprintf(error.message, sizeof(error.message), "Failed to write response to file %s", args.output_file);
                     error.code = write_status;

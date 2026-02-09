@@ -66,10 +66,10 @@ typedef enum {
     HTTP_PAYLOAD_TOO_LARGE               = 413,
     HTTP_URI_TOO_LONG                    = 414,
     HTTP_UNSUPPORTED_MEDIA_TYPE          = 415,
-    HTTP_RANGE_NOT_SATISFIABLE            = 416,
+    HTTP_RANGE_NOT_SATISFIABLE           = 416,
     HTTP_EXPECTATION_FAILED              = 417,
     HTTP_IM_A_TEAPOT                     = 418,
-    HTTP_MISDIRECTED_REQUEST              = 421,
+    HTTP_MISDIRECTED_REQUEST             = 421,
     HTTP_UNPROCESSABLE_ENTITY            = 422,
     HTTP_LOCKED                          = 423,
     HTTP_FAILED_DEPENDENCY               = 424,
@@ -87,7 +87,7 @@ typedef enum {
     HTTP_SERVICE_UNAVAILABLE             = 503,
     HTTP_GATEWAY_TIMEOUT                 = 504,
     HTTP_HTTP_VERSION_NOT_SUPPORTED      = 505,
-    HTTP_VARIANT_ALSO_NEGOTIATES          = 506,
+    HTTP_VARIANT_ALSO_NEGOTIATES         = 506,
     HTTP_INSUFFICIENT_STORAGE            = 507,
     HTTP_LOOP_DETECTED                   = 508,
     HTTP_NOT_EXTENDED                    = 510,
@@ -95,9 +95,9 @@ typedef enum {
 } HttpStatusCode;
 
 typedef struct {
+    uint64_t bytes_received;
     HttpStatusCode status_code;
     char raw[HTTP_MAX_RESPONSE];
-    int error_code;
 } HttpResponse;
 
 
@@ -114,7 +114,7 @@ typedef struct {
  *   number of bytes received on success
  *  -1 on error
  */
-int64_t http_get(NetSocket *sock,
+int http_get(NetSocket *sock,
              const char *host,
              const char *path,
              HttpResponse *response);
@@ -134,7 +134,7 @@ int64_t http_get(NetSocket *sock,
  *   number of bytes received on success
  *  -1 on error
  */
-int64_t http_post(NetSocket *sock,
+int http_post(NetSocket *sock,
               const char *host,
               const char *path,
               const char *content_type,
