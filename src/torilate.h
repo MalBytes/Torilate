@@ -14,8 +14,11 @@
 
 // Includes
 #include <stdio.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 
 // Definitions

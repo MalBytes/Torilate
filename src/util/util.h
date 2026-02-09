@@ -11,6 +11,7 @@
 #define TORILATE_UTIL_H
 
 #include "torilate.h"
+#include "http/http.h"
 #include "socks/socks4.h"
 
 typedef struct {
@@ -29,7 +30,7 @@ char *ut_strndup(const char *s, size_t n);
 
 // Parsing utilities
 int parse_uri(const char *uri, URI *out);
-int parse_http_response(const char *response, char *out, size_t out_size);
+int parse_http_response(HttpResponse *response, char *out, size_t out_size, size_t *resp_size, bool raw);
 
 // File handling utilities
 int write_to(const char *file_name, const char *data, size_t len);

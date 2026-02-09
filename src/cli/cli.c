@@ -32,7 +32,9 @@ int parse_arguments(int argc, char *argv[], CliArgsInfo *args_info) {
     }
 
     int rv = arg_cmd_dispatch(argv[1], argc, argv, res);
-    printf("%s: %s\n", PROG_NAME, arg_dstr_cstr(res));
+    if (rv != SUCCESS) {
+        fprintf(stderr, "%s: %s\n", PROG_NAME, arg_dstr_cstr(res));
+    }
     arg_dstr_destroy(res);
     arg_cmd_uninit();
 
@@ -106,8 +108,6 @@ int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
     // Set flags
     char *raw_flag = raw->count > 0 ? "r" : "";
     snprintf((char *)args_info->flags, MAX_ARG_COUNT, "%s", raw_flag);
-    
-    arg_dstr_catf(res, "Preparing to send HTTP GET request to %s%s/%s via TOR...\n", args_info->uri.host, args_info->uri.endpoint, args_info->uri.endpoint);
 
 exit_get:
     arg_freetable(argtable, sizeof(argtable)/sizeof(argtable[0]));
@@ -176,8 +176,6 @@ int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
     // Set flags
     char *raw_flag = raw->count > 0 ? "r" : "";
     snprintf((char *)args_info->flags, MAX_ARG_COUNT, "%s", raw_flag);
-    
-    arg_dstr_catf(res, "Preparing to send HTTP POST request to %s%s/%s via TOR...\n", args_info->uri.host, args_info->uri.endpoint, args_info->uri.endpoint);
 
 exit_post:
     arg_freetable(argtable, sizeof(argtable)/sizeof(argtable[0]));

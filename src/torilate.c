@@ -19,6 +19,8 @@
 #include "error/error.h"
 #include "socks/socks4.h"
 
+#include <stdbool.h>
+
 
 int main(int argc, char *argv[]) {
     // Variable Declarations
@@ -42,6 +44,7 @@ int main(int argc, char *argv[]) {
         error.code = status;
         goto cleanUp;
     }
+    bool raw = args.flags[0] == 'r';
     
     // Connect to TOR
     net_init(); // Initialize networking subsystem
@@ -62,8 +65,10 @@ int main(int argc, char *argv[]) {
 
     // Send HTTP request based on command
     HttpResponse resp;
+    size_t resp_size = 0;
     char *body_owned = NULL; // owns memory (if allocated)
     const char *body = NULL; // read-only view
+    char parsed_response[HTTP_MAX_RESPONSE] = {0};
 
     switch (args.cmd) {
         case CMD_GET:
@@ -73,11 +78,19 @@ int main(int argc, char *argv[]) {
                 error.code = ERR_HTTP_REQUEST_FAILED;
                 goto cleanUp;
             }
-            printf("HTTP GET request successful! Received %llu bytes.\n", resp.bytes_received);
+            // printf("Received %llu bytes\n\n", resp.bytes_received); // TODO: for verbose mode
+            
+            // Parse response
+            status = parse_http_response(&resp, parsed_response, sizeof(parsed_response), &resp_size, raw);
+            if (status != SUCCESS) {
+                snprintf(error.message, sizeof(error.message), "Failed to parse HTTP response");
+                error.code = status;
+                goto cleanUp;
+            }
             
             // Output response
             if (args.output_file) {
-                int write_status = write_to(args.output_file, resp.raw, resp.bytes_received);
+                int write_status = write_to(args.output_file, parsed_response, resp_size);
                 if (write_status != SUCCESS) {
                     snprintf(error.message, sizeof(error.message), "Failed to write response to file %s", args.output_file);
                     error.code = write_status;
@@ -86,8 +99,7 @@ int main(int argc, char *argv[]) {
                 printf("%s: Response written to %s\n", PROG_NAME, args.output_file);
                 break;
             } else {
-                printf("Status Code: %d\n\n", resp.status_code);
-                printf("Body:\n\n%s\n", resp.raw);
+                fwrite(parsed_response, 1, resp_size, stdout);
             }
             break;
 
@@ -112,11 +124,19 @@ int main(int argc, char *argv[]) {
                 goto cleanUp;
             }
             free(body_owned); // free if allocated
-            printf("HTTP POST request successful! Received %llu bytes.\n", resp.bytes_received);
+            // printf("Received %llu bytes\n\n", resp.bytes_received); // TODO: for verbose mode
+
+            // Parse response
+            status = parse_http_response(&resp, parsed_response, sizeof(parsed_response), &resp_size, raw);
+            if (status != SUCCESS) {
+                snprintf(error.message, sizeof(error.message), "Failed to parse HTTP response");
+                error.code = status;
+                goto cleanUp;
+            }
 
             // Output response
             if (args.output_file) {
-                int write_status = write_to(args.output_file, resp.raw, resp.bytes_received);
+                int write_status = write_to(args.output_file, parsed_response, resp_size);
                 if (write_status != SUCCESS) {
                     snprintf(error.message, sizeof(error.message), "Failed to write response to file %s", args.output_file);
                     error.code = write_status;
@@ -125,8 +145,7 @@ int main(int argc, char *argv[]) {
                 printf("%s: Response written to %s\n", PROG_NAME, args.output_file);
                 break;
             } else {
-                printf("Status Code: %d\n\n", resp.status_code);
-                printf("Body:\n\n%s\n", resp.raw);
+                fwrite(parsed_response, 1, resp_size, stdout);
             }
             break;
 
