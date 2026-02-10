@@ -39,6 +39,11 @@ ErrorCode parse_arguments(int argc, char *argv[], CliArgsInfo *args_info) {
         return ERR_NO_ARGS;
     }
 
+    if (validate_command(argv[1]) == -1) {
+        fprintf(stderr, "Invalid command '%s'. Use '%s help' for usage information.\n", argv[1], PROG_NAME);
+        return ERR_INVALID_COMMAND;
+    }
+
     // Initialize CLI and register commands
     cli_init(args_info);
 
@@ -94,6 +99,16 @@ void cli_init(CliArgsInfo *args_info) {
 
     // Initialize the CliArgsInfo structure to NULL/0 values
     memset(args_info, 0, sizeof(CliArgsInfo));
+}
+
+int validate_command(char *cmd) {
+    for (int i = 0; i < sub_cmnds_count; i++) {
+        if (strcmp(cmd, sub_cmnds[i].name) == 0) {
+            return i;
+        }
+    }
+
+    return -1;
 }
 
 int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
