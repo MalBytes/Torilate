@@ -11,17 +11,37 @@
 #include "cli/cli.h"
 #include "error/error.h"
 
+
+/* Data Structures */
+typedef struct {
+    char name[50];
+    arg_cmdfn handler;
+    char description[200];
+} SubCommand;
+
 /* Function Prototypes */
-void cli_init();
+int validate_command(char *cmd);
+void cli_init(CliArgsInfo *args_info);
 int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx);
 int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx);
 
+/* Global Variables */
+SubCommand sub_cmnds[] = {
+    {"get", cmd_get_proc, "send HTTP GET request"},
+    {"post", cmd_post_proc, "send HTTP POST request"},
+};
+int sub_cmnds_count = sizeof(sub_cmnds) / sizeof(SubCommand);
+
 /* Function Implementations */
 ErrorCode parse_arguments(int argc, char *argv[], CliArgsInfo *args_info) {
-    cli_init();
-    arg_cmd_register("get", cmd_get_proc, "send HTTP GET request", args_info);
-    arg_cmd_register("post", cmd_post_proc, "send HTTP POST request", args_info);
-    
+    if (argc < 2) {
+        fprintf(stderr, "No command provided. Use '%s help' for usage information.\n", PROG_NAME);
+        return ERR_NO_ARGS;
+    }
+
+    // Initialize CLI and register commands
+    cli_init(args_info);
+
     arg_dstr_t res = arg_dstr_create();
     if (argc == 1) {
         arg_make_get_help_msg(res);
@@ -33,7 +53,7 @@ ErrorCode parse_arguments(int argc, char *argv[], CliArgsInfo *args_info) {
 
     int rv = arg_cmd_dispatch(argv[1], argc, argv, res);
     if (rv != SUCCESS) {
-        fprintf(stderr, "%s: (%d) %s\n", PROG_NAME, rv, arg_dstr_cstr(res));
+        fprintf(stderr, "%s\n", arg_dstr_cstr(res));
     }
     arg_dstr_destroy(res);
     arg_cmd_uninit();
@@ -61,10 +81,19 @@ void get_help() {
     arg_freetable(argtable, sizeof(argtable)/sizeof(argtable[0]));
 }
 
-void cli_init() {
+/* Helper Functions */
+void cli_init(CliArgsInfo *args_info) {
     arg_set_module_name(PROG_NAME);
     arg_set_module_version(VER_MAJOR, VER_MINOR, VER_PATCH, VER_TAG);
     arg_cmd_init();
+
+    // Register sub-commands
+    for (int i=0; i < sub_cmnds_count; i++) {
+        arg_cmd_register(sub_cmnds[i].name, sub_cmnds[i].handler, sub_cmnds[i].description, args_info);
+    }
+
+    // Initialize the CliArgsInfo structure to NULL/0 values
+    memset(args_info, 0, sizeof(CliArgsInfo));
 }
 
 int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
@@ -100,14 +129,13 @@ int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
 
     // Set output file
     if (output_file->count > 0) {
-        args_info->output_file = output_file->sval[0];
-    } else {
-        args_info->output_file = NULL;
+        args_info->options[OPTION_OUTPUT_FILE] = output_file->sval[0];
     }
     
     // Set flags
-    char *raw_flag = raw->count > 0 ? "r" : "";
-    snprintf((char *)args_info->flags, MAX_ARG_COUNT, "%s", raw_flag);
+    if (raw->count > 0) {
+        args_info->flags[FLAG_RAW] = true;
+    }
 
 exit_get:
     arg_freetable(argtable, sizeof(argtable)/sizeof(argtable[0]));
@@ -162,20 +190,16 @@ int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
 
     // Set input & output files
     if (input_file->count > 0) {
-        args_info->input_file = input_file->sval[0];
-    } else {
-        args_info->input_file = NULL;
+        args_info->options[OPTION_INPUT_FILE] = input_file->sval[0];
     }
-
     if (output_file->count > 0) {
-        args_info->output_file = output_file->sval[0];
-    } else {
-        args_info->output_file = NULL;
-    }   
+        args_info->options[OPTION_OUTPUT_FILE] = output_file->sval[0];
+    }
     
     // Set flags
-    char *raw_flag = raw->count > 0 ? "r" : "";
-    snprintf((char *)args_info->flags, MAX_ARG_COUNT, "%s", raw_flag);
+    if (raw->count > 0) {
+        args_info->flags[FLAG_RAW] = true;
+    }
 
 exit_post:
     arg_freetable(argtable, sizeof(argtable)/sizeof(argtable[0]));

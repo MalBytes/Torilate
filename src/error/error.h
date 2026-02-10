@@ -20,7 +20,9 @@ typedef enum {
     SUCCESS = 0,
 
     /* CLI errors */
+    ERR_NO_ARGS,
     ERR_INVALID_ARGS,
+    ERR_INVALID_COMMAND,
 
     /* Network errors */
     ERR_NETWORK_IO,

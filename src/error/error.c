@@ -13,7 +13,9 @@
 static const char *err_messg_list[ERR_COUNT] = {
     [SUCCESS]                    = "No error",
 
+    [ERR_NO_ARGS]                = "No arguments provided",
     [ERR_INVALID_ARGS]           = "Invalid arguments",
+    [ERR_INVALID_COMMAND]        = "Invalid command",
 
     [ERR_NETWORK_IO]             = "Network I/O error",
     [ERR_INVALID_ADDRESS]        = "Invalid network address",

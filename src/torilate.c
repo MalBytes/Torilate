@@ -23,10 +23,10 @@
 
 
 int main(int argc, char *argv[]) {
-    // Variable Declarations
-    int status;
-    Error error;
-    CliArgsInfo args;
+    // Variable Declarations (initialized to default values or NULL)
+    int status = 0;
+    Error error = {0};
+    CliArgsInfo args = {0};
     NetSocket sock = INVALID_SOCKET;
 
     // Initialize error structure
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
         error.code = status;
         goto cleanUp;
     }
-    bool raw = args.flags[0] == 'r';
+    bool raw = args.flags[FLAG_RAW] == true;
     
     // Connect to TOR
     net_init(); // Initialize networking subsystem
@@ -89,14 +89,14 @@ int main(int argc, char *argv[]) {
             }
             
             // Output response
-            if (args.output_file) {
-                int write_status = write_to(args.output_file, parsed_response, resp_size);
+            if (args.options[OPTION_OUTPUT_FILE]) {
+                int write_status = write_to(args.options[OPTION_OUTPUT_FILE], parsed_response, resp_size);
                 if (write_status != SUCCESS) {
-                    snprintf(error.message, sizeof(error.message), "Failed to write response to file %s", args.output_file);
+                    snprintf(error.message, sizeof(error.message), "Failed to write response to file %s", args.options[OPTION_OUTPUT_FILE]);
                     error.code = write_status;
                     goto cleanUp;
                 }
-                printf("%s: Response written to %s\n", PROG_NAME, args.output_file);
+                printf("%s: Response written to %s\n", PROG_NAME, args.options[OPTION_OUTPUT_FILE]);
                 break;
             } else {
                 fwrite(parsed_response, 1, resp_size, stdout);
@@ -105,10 +105,10 @@ int main(int argc, char *argv[]) {
 
         case CMD_POST:
             // Read body
-            if (args.input_file) {
-                int read_status = read_from(args.input_file, &body_owned, NULL);
+            if (args.options[OPTION_INPUT_FILE]) {
+                int read_status = read_from(args.options[OPTION_INPUT_FILE], &body_owned, NULL);
                 if (read_status != SUCCESS) {
-                    snprintf(error.message, sizeof(error.message), "Failed to read file %s", args.input_file);
+                    snprintf(error.message, sizeof(error.message), "Failed to read file %s", args.options[OPTION_INPUT_FILE]);
                     error.code = read_status;
                     goto cleanUp;
                 }
@@ -135,14 +135,14 @@ int main(int argc, char *argv[]) {
             }
 
             // Output response
-            if (args.output_file) {
-                int write_status = write_to(args.output_file, parsed_response, resp_size);
+            if (args.options[OPTION_OUTPUT_FILE]) {
+                int write_status = write_to(args.options[OPTION_OUTPUT_FILE], parsed_response, resp_size);
                 if (write_status != SUCCESS) {
-                    snprintf(error.message, sizeof(error.message), "Failed to write response to file %s", args.output_file);
+                    snprintf(error.message, sizeof(error.message), "Failed to write response to file %s", args.options[OPTION_OUTPUT_FILE]);
                     error.code = write_status;
                     goto cleanUp;
                 }
-                printf("%s: Response written to %s\n", PROG_NAME, args.output_file);
+                printf("%s: Response written to %s\n", PROG_NAME, args.options[OPTION_OUTPUT_FILE]);
                 break;
             } else {
                 fwrite(parsed_response, 1, resp_size, stdout);
