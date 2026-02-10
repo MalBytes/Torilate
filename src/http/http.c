@@ -52,7 +52,7 @@ static int http_recv_response(NetSocket *sock, HttpResponse *out) {
     return SUCCESS;
 }
 
-int http_get(NetSocket *sock, const char *host, const char *path, HttpResponse *out) {
+ErrorCode http_get(NetSocket *sock, const char *host, const char *path, HttpResponse *out) {
     char request[2048];
 
     snprintf(request, sizeof(request),
@@ -64,12 +64,12 @@ int http_get(NetSocket *sock, const char *host, const char *path, HttpResponse *
              path, host);
 
     if (http_send(sock, request) != 0)
-        return -1;
+        return ERR_HTTP_REQUEST_FAILED;
 
     return http_recv_response(sock, out);
 }
 
-int http_post(NetSocket *sock, const char *host, const char *path, const char *content_type, const char *body, HttpResponse *out) {
+ErrorCode http_post(NetSocket *sock, const char *host, const char *path, const char *content_type, const char *body, HttpResponse *out) {
     char request[4096];
     size_t body_len = body ? strlen(body) : 0;
     
@@ -90,7 +90,7 @@ int http_post(NetSocket *sock, const char *host, const char *path, const char *c
              "\r\n%s",
              path, host, content_type_header, body_len, body ? body : "");
     if (http_send(sock, request) != 0)
-        return -1;
+        return ERR_HTTP_REQUEST_FAILED;
 
     return http_recv_response(sock, out);
 }

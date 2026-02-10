@@ -12,10 +12,9 @@
 */
 
 #include "util/util.h"
-#include "error/error.h"
 
 
-int write_to(const char *file_name, const char *data, size_t len) {
+ErrorCode write_to(const char *file_name, const char *data, size_t len) {
     int return_code = SUCCESS;
     FILE *file = fopen(file_name, "wb");
     if (!file) {
@@ -41,7 +40,7 @@ exit_write:
     return return_code;
 }
 
-int read_from(const char *file_name, char **buffer, size_t *out_len) {
+ErrorCode read_from(const char *file_name, char **buffer, size_t *out_len) {
     int return_code = SUCCESS;
     FILE *file = fopen(file_name, "rb");
     if (!file) {

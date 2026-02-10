@@ -16,35 +16,42 @@
 
 
 /* Error Codes */
-#define SUCCESS                     0
+typedef enum {
+    SUCCESS = 0,
 
-// Cli Errors
-#define ERR_INVALID_ARGS            1
+    /* CLI errors */
+    ERR_INVALID_ARGS,
 
-// Network Errors
-#define ERR_SOCK_INIT_FAILED        2
-#define ERR_SOCKET_CREATION_FAILED  3
-#define ERR_TOR_CONNECTION_FAILED   4
-#define ERR_CONNECTION_FAILED       5
+    /* Network errors */
+    ERR_NETWORK_IO,
+    ERR_INVALID_ADDRESS,
+    ERR_SOCK_INIT_FAILED,
+    ERR_CONNECTION_FAILED,
+    ERR_SOCKET_CREATION_FAILED,
+    ERR_TOR_CONNECTION_FAILED,
 
-// HTTP Errors
-#define ERR_INVALID_URI             6
-#define ERR_HTTP_REQUEST_FAILED     7
-#define ERR_BAD_RESPONSE            8
+    /* HTTP errors */
+    ERR_INVALID_URI,
+    ERR_BAD_RESPONSE,
+    ERR_HTTP_REQUEST_FAILED,
 
-// System Errors
-#define ERR_IO                      9
-#define ERR_OUTOFMEMORY             10
-#define ERR_NO_PERMISSION           11
-#define ERR_FILE_NOT_FOUND          12
+    /* System errors */
+    ERR_IO,
+    ERR_OUTOFMEMORY,
+    ERR_NO_PERMISSION,
+    ERR_FILE_NOT_FOUND,
 
-// Unkown Error
-#define ERR_LAST_ERROR_CODE         13
+    /* Unknown errors */
+    ERR_LAST_ERROR_CODE,
+
+    /* Sentinel */
+    ERR_COUNT
+} ErrorCode;
 
 
 /* Error Struct */
 typedef struct {
-    int code;
+    ErrorCode code;
     char message[512];
 } Error;
 

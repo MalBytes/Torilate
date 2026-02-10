@@ -17,6 +17,7 @@
 #include <stddef.h>
 #include "torilate.h"
 #include "net/socket.h"
+#include "error/error.h"
 
 #define HTTP_MAX_RESPONSE 8192
 
@@ -114,7 +115,7 @@ typedef struct {
  *   number of bytes received on success
  *  -1 on error
  */
-int http_get(NetSocket *sock,
+ErrorCode http_get(NetSocket *sock,
              const char *host,
              const char *path,
              HttpResponse *response);
@@ -134,7 +135,7 @@ int http_get(NetSocket *sock,
  *   number of bytes received on success
  *  -1 on error
  */
-int http_post(NetSocket *sock,
+ErrorCode http_post(NetSocket *sock,
               const char *host,
               const char *path,
               const char *content_type,

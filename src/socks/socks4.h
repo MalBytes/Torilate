@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 #include "net/socket.h"
+#include "error/error.h"
 
 /* SOCKS4 result codes */
 typedef enum {
@@ -39,7 +40,7 @@ typedef enum {
  *   0 on success
  *  -1 on protocol or transport error
  */
-int socks4_connect(NetSocket *sock,
+ErrorCode socks4_connect(NetSocket *sock,
                    const char *dst_ip,
                    uint16_t dst_port,
                    const char *user_id,

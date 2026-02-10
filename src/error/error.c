@@ -10,20 +10,27 @@
 #include "error/error.h"
 
 
-static const char *err_messg_list[] = {
+static const char *err_messg_list[ERR_COUNT] = {
     [SUCCESS]                    = "No error",
+
     [ERR_INVALID_ARGS]           = "Invalid arguments",
+
+    [ERR_NETWORK_IO]             = "Network I/O error",
+    [ERR_INVALID_ADDRESS]        = "Invalid network address",
     [ERR_SOCK_INIT_FAILED]       = "Failed to initialize socket subsystem",
-    [ERR_SOCKET_CREATION_FAILED] = "Failed to create socket",
-    [ERR_TOR_CONNECTION_FAILED]  = "Failed to connect to TOR proxy",
     [ERR_CONNECTION_FAILED]      = "Failed to connect to host",
-    [ERR_HTTP_REQUEST_FAILED]    = "HTTP request failed",
+    [ERR_TOR_CONNECTION_FAILED]  = "Failed to connect to TOR proxy",
+    [ERR_SOCKET_CREATION_FAILED] = "Failed to create socket",
+    
     [ERR_INVALID_URI]            = "Invalid URL",
+    [ERR_BAD_RESPONSE]           = "Bad or malformed response",
+    [ERR_HTTP_REQUEST_FAILED]    = "HTTP request failed",
+
+    [ERR_IO]                     = "I/O error",
     [ERR_OUTOFMEMORY]            = "Out of memory",
     [ERR_NO_PERMISSION]          = "Permission denied",
     [ERR_FILE_NOT_FOUND]         = "File not found",
-    [ERR_IO]                     = "I/O error",
-    [ERR_BAD_RESPONSE]           = "Bad or malformed response",
+
     [ERR_LAST_ERROR_CODE]        = "Unknown error"
 };
 

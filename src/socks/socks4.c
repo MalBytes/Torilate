@@ -17,7 +17,7 @@
 #define SOCKS4_CMD_CONNECT  0x01
 #define SOCKS4_CMD_BIND     0x02
 
-int socks4_connect(NetSocket *sock, const char *dst_ip, uint16_t dst_port, const char *user_id, NetAddrType addr_type) {
+ErrorCode socks4_connect(NetSocket *sock, const char *dst_ip, uint16_t dst_port, const char *user_id, NetAddrType addr_type) {
     uint8_t request[512];
     uint8_t response[8];
     size_t  offset = 0;
@@ -32,10 +32,10 @@ int socks4_connect(NetSocket *sock, const char *dst_ip, uint16_t dst_port, const
 
     if (addr_type == DOMAIN) {
         if (net_parse_ipv4("0.0.0.1", &ip_n) != 0)
-            return -1;
+            return ERR_INVALID_ADDRESS;
     } else {
         if (net_parse_ipv4(dst_ip, &ip_n) != 0)
-            return -1;
+            return ERR_INVALID_ADDRESS;
     }
 
     memcpy(&request[offset], &ip_n, sizeof(ip_n));
@@ -56,13 +56,13 @@ int socks4_connect(NetSocket *sock, const char *dst_ip, uint16_t dst_port, const
     request[offset++] = '\0';
 
     if (net_send_all(sock, request, offset) != 0)
-        return -1;
+        return ERR_NETWORK_IO;
 
     if (net_recv(sock, response, sizeof(response)) != sizeof(response))
-        return -1;
+        return ERR_NETWORK_IO;
 
     if (response[0] != 0x00 || response[1] != SOCKS4_OK)
-        return -1;
+        return ERR_CONNECTION_FAILED;
 
-    return 0;
+    return SUCCESS;
 }

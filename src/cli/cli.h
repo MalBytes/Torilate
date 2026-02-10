@@ -31,6 +31,6 @@ typedef struct {
 } CliArgsInfo;
 
 void get_help();
-int parse_arguments(int argc, char *argv[], CliArgsInfo *args_info);
+ErrorCode parse_arguments(int argc, char *argv[], CliArgsInfo *args_info);
 
 #endif

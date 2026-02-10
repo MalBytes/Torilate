@@ -17,7 +17,7 @@ int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx);
 int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx);
 
 /* Function Implementations */
-int parse_arguments(int argc, char *argv[], CliArgsInfo *args_info) {
+ErrorCode parse_arguments(int argc, char *argv[], CliArgsInfo *args_info) {
     cli_init();
     arg_cmd_register("get", cmd_get_proc, "send HTTP GET request", args_info);
     arg_cmd_register("post", cmd_post_proc, "send HTTP POST request", args_info);
@@ -33,12 +33,12 @@ int parse_arguments(int argc, char *argv[], CliArgsInfo *args_info) {
 
     int rv = arg_cmd_dispatch(argv[1], argc, argv, res);
     if (rv != SUCCESS) {
-        fprintf(stderr, "%s: %s\n", PROG_NAME, arg_dstr_cstr(res));
+        fprintf(stderr, "%s: (%d) %s\n", PROG_NAME, rv, arg_dstr_cstr(res));
     }
     arg_dstr_destroy(res);
     arg_cmd_uninit();
 
-    return rv;
+    return rv == SUCCESS ? SUCCESS : ERR_INVALID_ARGS;
 }
 
 void get_help() {
@@ -77,7 +77,7 @@ int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
     int exitcode = SUCCESS;
     void *argtable[] = {cmd, uri, output_file, raw, end};
     if (arg_nullcheck(argtable) != 0) {
-        fprintf(stderr, "failed to allocate argtable");
+        arg_dstr_cat(res, "failed to allocate argtable");
         exitcode = ERR_OUTOFMEMORY;
         goto exit_get;
     }
@@ -127,7 +127,7 @@ int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
     void *argtable[] = {cmd, uri, header, body, input_file, output_file, raw, end};
     int exitcode = SUCCESS;
     if (arg_nullcheck(argtable) != 0) {
-        fprintf(stderr, "failed to allocate argtable");
+        arg_dstr_cat(res, "failed to allocate argtable");
         exitcode = ERR_OUTOFMEMORY;
         goto exit_post;
     }

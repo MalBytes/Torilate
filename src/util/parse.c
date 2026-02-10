@@ -12,7 +12,7 @@
 #include "error/error.h"
 
 
-int parse_uri(const char *uri, URI *out) {
+ErrorCode parse_uri(const char *uri, URI *out) {
     char *host_start;
     char *port_start;
     char *path_start;
@@ -61,7 +61,7 @@ int parse_uri(const char *uri, URI *out) {
     return SUCCESS;
 }
 
-int parse_http_response(HttpResponse *response, char *out, size_t out_size, size_t *resp_size, bool raw) {
+ErrorCode parse_http_response(HttpResponse *response, char *out, size_t out_size, size_t *resp_size, bool raw) {
     int status_code = 0;
     char status_text[64] = {0};
     int content_length = -1;
