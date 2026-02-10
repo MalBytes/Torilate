@@ -116,6 +116,7 @@ Planned improvements include:
 
 - [x] URI parsing & resolution
 - [ ] HTTPS (TLS) support
+- [ ] HTTP chunked transfer encoding handling
 - [ ] HTTP redirect handling
 - [ ] SOCKS5 support
 - [ ] Improved protocol parsing
