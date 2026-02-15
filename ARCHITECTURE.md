@@ -44,7 +44,9 @@ The codebase is organized by **architectural responsibility**, not by feature ca
 │   │   └── socks4.h
 │   │
 │   ├── util/               # Shared helper utilities
-│   │   ├── util.c
+│   │   ├── file.c
+│   │   ├── memory.c
+│   │   ├── parse.c
 │   │   └── util.h
 │   │
 │   ├── torilate.c          # Application entry point and orchestration logic
@@ -213,23 +215,46 @@ This keeps it **pure, reusable, and testable**.
 
 ---
 
-## 3.6. Error Handling Layer (`src/error`)
+### 3.6. Error Handling Layer (`src/error`)
 
 **Responsibility**
 
-* Define shared error codes
-* Provide consistent, human-readable error messages
+* Define shared error codes with semantic meaning
+* Provide structured error propagation with runtime context
+* Format errors for user-facing output with configurable verbosity
 
 **Details**
 
-* Exposes a central `Error` structure containing:
+* Functions return `Error` structs containing an error code (enum) and message (512 bytes)
+* Errors created at failure point using `ERR_NEW(code, fmt, ...)`
+* Context added while propagating using `ERR_PROPAGATE(err, fmt, ...)`
+* Callers check with `ERR_FAILED(err)`, return success with `ERR_OK()`
 
-  * a numeric error code
-  * an optional contextual message
-* Maps error codes to canonical descriptions
-* Formats errors for user-facing output
+**Display Modes:**
+* Simple mode — shows top-level context only (user-friendly)
+* Verbose mode — shows full propagation chain (debugging)
 
-The Error layer is **dependency-free** and may be used by any component without introducing cross-layer coupling.
+**Notes**
+
+* Passed by value (520 bytes), fixed-size messages (no allocations)
+* Zero dependencies, thread-safe (no global state)
+* All errors must be checked and either handled or propagated
+
+**Example**
+
+```c
+// Create error at failure point
+Error err = ERR_NEW(ERR_CONNECTION_FAILED, "connect() failed, errno=%d", errno);
+
+// Add context while propagating
+if (ERR_FAILED(err)) {
+    return ERR_PROPAGATE(err, "Cannot connect to Tor proxy at %s:%d", ip, port);
+}
+
+// Display
+const char *msg = get_err_msg(&err, false);  // Simple mode
+// Output: "torilate: (30) Failed to connect to host: Cannot connect to Tor proxy at 127.0.0.1:9050"
+```
 
 ---
 
