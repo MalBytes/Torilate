@@ -3,8 +3,8 @@
     Author: Trident Apollo
     Date: 23-01-2026
     Reference:
-        - SOCKS4 Protocol:
-          https://www.openssh.org/txt/socks4.protocol
+        - SOCKS4 Protocol: https://www.openssh.org/txt/socks4.protocol
+        - SOCKS4a Extension: https://www.openssh.org/txt/socks4a.protocol
     Description:
         SOCKS4 client-side protocol implementation.
         Provides functionality to establish TCP connections
@@ -40,7 +40,7 @@ typedef enum {
  *   0 on success
  *  -1 on protocol or transport error
  */
-ErrorCode socks4_connect(NetSocket *sock,
+Error socks4_connect(NetSocket *sock,
                    const char *dst_ip,
                    uint16_t dst_port,
                    const char *user_id,

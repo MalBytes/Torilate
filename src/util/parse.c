@@ -12,7 +12,7 @@
 #include "error/error.h"
 
 
-ErrorCode parse_uri(const char *uri, URI *out) {
+Error parse_uri(const char *uri, URI *out) {
     char *host_start;
     char *port_start;
     char *path_start;
@@ -29,7 +29,7 @@ ErrorCode parse_uri(const char *uri, URI *out) {
         if (format != NULL) {
             out->schema = INVALID_SCHEMA;
             out->host = ut_strndup(uri, format - uri);
-            return ERR_INVALID_URI;
+            return ERR_NEW(ERR_INVALID_URI, "Unsupported URI schema '%s'", out->host);
         }
         out->schema = HTTP; // Default to HTTP
         host_start = (char *)uri;
@@ -58,10 +58,10 @@ ErrorCode parse_uri(const char *uri, URI *out) {
     // Determine address type
     out->addr_type = net_get_addr_type(out->host);
 
-    return SUCCESS;
+    return ERR_OK();
 }
 
-ErrorCode parse_http_response(HttpResponse *response, char *out, size_t out_size, size_t *resp_size, bool raw) {
+Error parse_http_response(HttpResponse *response, char *out, size_t out_size, size_t *resp_size, bool raw) {
     int status_code = 0;
     char status_text[64] = {0};
     int content_length = -1;
@@ -70,7 +70,7 @@ ErrorCode parse_http_response(HttpResponse *response, char *out, size_t out_size
     if (raw) {
         const char *start = strstr(response->raw, "HTTP");
         if (!start) {
-            return ERR_BAD_RESPONSE;
+            return ERR_NEW(ERR_BAD_RESPONSE, "Failed to find HTTP start in raw response");
         }
 
         const char *end = response->raw + response->bytes_received;
@@ -90,20 +90,20 @@ ErrorCode parse_http_response(HttpResponse *response, char *out, size_t out_size
             *resp_size = len;
         }
 
-        return SUCCESS;
+        return ERR_OK();
     }
 
     /* Parse status line */
     const char *status_line = strstr(response->raw, "HTTP");
     if (sscanf(status_line, "HTTP/%*s %d %63[^\r\n]", &status_code, status_text) != 2 ||
         status_code < 100 || status_code > 599) {
-        return ERR_BAD_RESPONSE;
+        return ERR_NEW(ERR_BAD_RESPONSE, "Failed to parse HTTP status line");
     }
 
     /* Find end of headers */
     const char *header_end = strstr(response->raw, "\r\n\r\n");
     if (!header_end) {
-        return ERR_BAD_RESPONSE;
+        return ERR_NEW(ERR_BAD_RESPONSE, "Failed to find end of HTTP headers");
     }
     header_end += 4;
 
@@ -139,13 +139,13 @@ ErrorCode parse_http_response(HttpResponse *response, char *out, size_t out_size
         );
         size_t len = strlen(header_end);
         if (len < 4) {
-            return ERR_BAD_RESPONSE;
+            return ERR_NEW(ERR_BAD_RESPONSE, "HTTP response body too short");
         }
         body_length = strlen(header_end) - 4; /* -4 to exclude the trailing \r\n\r\n */
     }
 
     if (written < 0 || (size_t)written >= out_size) {
-        return ERR_IO;
+        return ERR_NEW(ERR_IO, "Failed to write HTTP response header");
     }
 
     /* Copy body safely */
@@ -158,5 +158,5 @@ ErrorCode parse_http_response(HttpResponse *response, char *out, size_t out_size
     out[written + body_length] = '\0';
     *resp_size = written + body_length;
 
-    return SUCCESS;
+    return ERR_OK();
 }

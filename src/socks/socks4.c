@@ -3,8 +3,8 @@
     Author: Trident Apollo
     Date: 23-01-2026
     Reference:
-        - SOCKS4 Protocol:
-          https://www.openssh.org/txt/socks4.protocol
+        - SOCKS4 Protocol: https://www.openssh.org/txt/socks4.protocol
+        - SOCKS4a Extension: https://www.openssh.org/txt/socks4a.protocol
     Description:
         Implementation of the SOCKS4 client-side CONNECT command.
 */
@@ -17,11 +17,12 @@
 #define SOCKS4_CMD_CONNECT  0x01
 #define SOCKS4_CMD_BIND     0x02
 
-ErrorCode socks4_connect(NetSocket *sock, const char *dst_ip, uint16_t dst_port, const char *user_id, NetAddrType addr_type) {
-    uint8_t request[512];
-    uint8_t response[8];
-    size_t  offset = 0;
+Error socks4_connect(NetSocket *sock, const char *dst_ip, uint16_t dst_port, const char *user_id, NetAddrType addr_type) {
     uint32_t ip_n;
+    size_t  offset = 0;
+    uint8_t response[8];
+    uint8_t request[512];
+    Error err = ERR_OK();
 
     request[offset++] = SOCKS4_VERSION;
     request[offset++] = SOCKS4_CMD_CONNECT;
@@ -31,11 +32,13 @@ ErrorCode socks4_connect(NetSocket *sock, const char *dst_ip, uint16_t dst_port,
     offset += sizeof(port_n);
 
     if (addr_type == DOMAIN) {
-        if (net_parse_ipv4("0.0.0.1", &ip_n) != 0)
-            return ERR_INVALID_ADDRESS;
+        err = net_parse_ipv4("0.0.0.1", &ip_n);
+        if (ERR_FAILED(err))
+            return ERR_PROPAGATE(err, "Failed to set SOCKS4 domain placeholder IP");
     } else {
-        if (net_parse_ipv4(dst_ip, &ip_n) != 0)
-            return ERR_INVALID_ADDRESS;
+        err = net_parse_ipv4(dst_ip, &ip_n);
+        if (ERR_FAILED(err))
+            return ERR_PROPAGATE(err, "SOCKS4 IP resolution failed");
     }
 
     memcpy(&request[offset], &ip_n, sizeof(ip_n));
@@ -54,15 +57,25 @@ ErrorCode socks4_connect(NetSocket *sock, const char *dst_ip, uint16_t dst_port,
         offset += host_len;
     }
     request[offset++] = '\0';
+    
+    err = net_send_all(sock, request, offset);
+    if (ERR_FAILED(err))
+        // Preserves: bytes sent, WSA error, etc.
+        return ERR_PROPAGATE(err, "Failed to send SOCKS4 CONNECT request (%zu bytes)", offset);
 
-    if (net_send_all(sock, request, offset) != 0)
-        return ERR_NETWORK_IO;
+    size_t bytes_received;
+    err = net_recv(sock, response, sizeof(response), &bytes_received);
+    if (ERR_FAILED(err)) {
+        return ERR_PROPAGATE(err, "Failed to receive SOCKS4 response");
+    }
+    
+    if (bytes_received != sizeof(response)) {
+        return ERR_NEW(ERR_NET_RECV_FAILED, "Expected 8 bytes in SOCKS4 response but received %zu", bytes_received);
+    }
 
-    if (net_recv(sock, response, sizeof(response)) != sizeof(response))
-        return ERR_NETWORK_IO;
+    if (response[0] != 0x00 || response[1] != SOCKS4_OK) {
+        return ERR_NEW(ERR_CONNECTION_FAILED, "SOCKS4 request rejected (VN=%d, CD=%d) for %s:%d", response[0], response[1], dst_ip, dst_port);
+    }
 
-    if (response[0] != 0x00 || response[1] != SOCKS4_OK)
-        return ERR_CONNECTION_FAILED;
-
-    return SUCCESS;
+    return err;
 }

@@ -11,48 +11,15 @@
 */
 
 #include "http/http.h"
-#include "error/error.h"
+#include "util/util.h"
 
-static int http_send(NetSocket *sock, const char *request) {
-    size_t len = strlen(request);
-    return net_send_all(sock, request, len);
-}
 
-static int http_recv_response(NetSocket *sock, HttpResponse *out) {
-    int total = 0;
-    out->bytes_received = 0;
+/* Function Prototypes*/
+static Error http_send(NetSocket *sock, const char *request);
+static Error http_recv_response(NetSocket *sock, HttpResponse *out);
 
-    while (total < HTTP_MAX_RESPONSE - 1) {
-        int n = net_recv(sock, out->raw + total, HTTP_MAX_RESPONSE - 1 - total);
-        if (n <= 0)
-            break;
-
-        total += n;
-
-        // /* Stop early if server closed connection */
-        // if (strstr(out->raw, "\r\n\r\n"))
-        //     break;
-    }
-
-    out->raw[total] = '\0';
-
-    /* Parse status code */
-    int code;
-    char *status = out->raw;
-    while (*status == ' ' || *status == '\r' || *status == '\n')
-        status++;
-
-    if (sscanf(status, "HTTP/%*d.%*d %d", &code) != 1 || code < 100 || code > 599) {
-        return ERR_BAD_RESPONSE;
-    }
-
-    out->status_code = (HttpStatusCode)code;
-    out->bytes_received = total;
-
-    return SUCCESS;
-}
-
-ErrorCode http_get(NetSocket *sock, const char *host, const char *path, HttpResponse *out) {
+/* Public API */
+Error http_get(NetSocket *sock, const char *host, const char *path, HttpResponse *out) {
     char request[2048];
 
     snprintf(request, sizeof(request),
@@ -63,13 +30,14 @@ ErrorCode http_get(NetSocket *sock, const char *host, const char *path, HttpResp
              "\r\n",
              path, host);
 
-    if (http_send(sock, request) != 0)
-        return ERR_HTTP_REQUEST_FAILED;
+    Error err = http_send(sock, request);
+    if (ERR_FAILED(err))
+        return err;
 
     return http_recv_response(sock, out);
 }
 
-ErrorCode http_post(NetSocket *sock, const char *host, const char *path, const char *content_type, const char *body, HttpResponse *out) {
+Error http_post(NetSocket *sock, const char *host, const char *path, const char *content_type, const char *body, HttpResponse *out) {
     char request[4096];
     size_t body_len = body ? strlen(body) : 0;
     
@@ -89,8 +57,49 @@ ErrorCode http_post(NetSocket *sock, const char *host, const char *path, const c
              "Connection: close\r\n"
              "\r\n%s",
              path, host, content_type_header, body_len, body ? body : "");
-    if (http_send(sock, request) != 0)
-        return ERR_HTTP_REQUEST_FAILED;
+
+    Error err = http_send(sock, request);
+    if (ERR_FAILED(err))
+        return err;
 
     return http_recv_response(sock, out);
+}
+
+static Error http_send(NetSocket *sock, const char *request) {
+    size_t len = strlen(request);
+    return net_send_all(sock, request, len);
+}
+
+static Error http_recv_response(NetSocket *sock, HttpResponse *out) {
+    int total = 0;
+    out->bytes_received = 0;
+
+    while (total < HTTP_MAX_RESPONSE - 1) {
+        size_t bytes_received = 0;
+        Error err = net_recv(sock, out->raw + total, HTTP_MAX_RESPONSE - 1 - total, &bytes_received);
+
+        if (ERR_FAILED(err))
+            return ERR_PROPAGATE(err, "Failed to receive HTTP response");
+        if (bytes_received == 0)
+            break;
+
+        total += bytes_received;
+    }
+
+    out->raw[total] = '\0';
+
+    /* Parse status code */
+    int code;
+    char *status = out->raw;
+    while (*status == ' ' || *status == '\r' || *status == '\n')
+        status++;
+
+    if (sscanf(status, "HTTP/%*d.%*d %d", &code) != 1 || code < 100 || code > 599) {
+        return ERR_NEW(ERR_BAD_RESPONSE, "Malformed HTTP header: Unable to parse status code");
+    }
+
+    out->status_code = (HttpStatusCode)code;
+    out->bytes_received = total;
+
+    return ERR_OK();
 }

@@ -14,64 +14,63 @@
 #include "util/util.h"
 
 
-ErrorCode write_to(const char *file_name, const char *data, size_t len) {
-    int return_code = SUCCESS;
+Error write_to(const char *file_name, const char *data, size_t len) {
+    Error err = ERR_OK();
     FILE *file = fopen(file_name, "wb");
     if (!file) {
         int err = errno;
         switch (err) {
-            case ENOENT:    return ERR_FILE_NOT_FOUND;
-            case EACCES:    return ERR_NO_PERMISSION;
-            case ENOMEM:    return ERR_OUTOFMEMORY;
-            default:        return ERR_IO; 
+            case ENOENT:    return ERR_NEW(ERR_FILE_NOT_FOUND, "File '%s' not found", file_name);
+            case EACCES:    return ERR_NEW(ERR_NO_PERMISSION, "No permission to write to file '%s'", file_name);
+            case ENOMEM:    return ERR_NEW(ERR_OUTOFMEMORY, "Out of memory while writing to file '%s'", file_name);
+            default:        return ERR_NEW(ERR_IO, "Failed to open file '%s' for writing", file_name); 
         }
     }
 
     size_t written = fwrite(data, 1, len, file);
     int flush_status = fflush(file);
     if (written != len || flush_status != 0) {
-        return_code = ERR_IO;
+        err = ERR_NEW(ERR_IO, "Failed to write to file '%s'", file_name);
         goto exit_write;
     }
 
 exit_write:
     fclose(file);
-
-    return return_code;
+    return err;
 }
 
-ErrorCode read_from(const char *file_name, char **buffer, size_t *out_len) {
-    int return_code = SUCCESS;
+Error read_from(const char *file_name, char **buffer, size_t *out_len) {
+    Error err = ERR_OK();
     FILE *file = fopen(file_name, "rb");
     if (!file) {
         int err = errno;
         switch (err) {
-            case ENOENT:    return ERR_FILE_NOT_FOUND;
-            case EACCES:    return ERR_NO_PERMISSION;
-            case ENOMEM:    return ERR_OUTOFMEMORY;
-            default:        return ERR_IO; 
+            case ENOENT:    return ERR_NEW(ERR_FILE_NOT_FOUND, "File '%s' not found", file_name);
+            case EACCES:    return ERR_NEW(ERR_NO_PERMISSION, "No permission to read file '%s'", file_name);
+            case ENOMEM:    return ERR_NEW(ERR_OUTOFMEMORY, "Out of memory while reading from file '%s'", file_name);
+            default:        return ERR_NEW(ERR_IO, "Failed to open file '%s' for reading", file_name);
         }
     }
 
     if (fseek(file, 0, SEEK_END) != 0) {
-        return_code = ERR_IO;
+        err = ERR_NEW(ERR_IO, "Failed to seek end of file '%s'", file_name);
         goto exit_read;
     }
     long size = ftell(file);
     if (size < 0) {
-        return_code = ERR_IO;
+        err = ERR_NEW(ERR_IO, "Failed to determine size of file '%s'", file_name);
         goto exit_read;
     }
     rewind(file);
 
     char *data = (char *)malloc(size + 1);
     if (!data) {
-        return_code = ERR_OUTOFMEMORY;
+        err = ERR_NEW(ERR_OUTOFMEMORY, "Out of memory while allocating buffer for file '%s'", file_name);
         goto exit_read;
     }
     size_t read_size = fread(data, 1, size, file);
     if (read_size != (size_t)size) {
-        return_code = ERR_IO;
+        err = ERR_NEW(ERR_IO, "Failed to read file '%s'", file_name);
         goto exit_read;
     }
     data[size] = '\0';
@@ -86,5 +85,5 @@ exit_read:
     }
     fclose(file);
 
-    return return_code;
+    return err;
 }

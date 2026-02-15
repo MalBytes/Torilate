@@ -105,17 +105,14 @@ typedef struct {
 /*
  * Perform an HTTP GET request.
  *
- * Parameters:
- *   sock     - connected socket (already tunneled via SOCKS)
- *   host     - target host (e.g. "example.com")
- *   path     - request path (e.g. "/index.html")
- *   response - HttpResponse structure to store the response
+ *  @param sock              connected socket (already tunneled via SOCKS)
+ *  @param host              target host (e.g. "example.com")
+ *  @param path              request path (e.g. "/index.html")
+ *  @param response          HttpResponse structure to store the response
  *
- * Returns:
- *   number of bytes received on success
- *  -1 on error
+ *  @return ERR_OK on success and an Error struct on failure
  */
-ErrorCode http_get(NetSocket *sock,
+Error http_get(NetSocket *sock,
              const char *host,
              const char *path,
              HttpResponse *response);
@@ -123,19 +120,16 @@ ErrorCode http_get(NetSocket *sock,
 /*
  * Perform an HTTP POST request.
  *
- * Parameters:
- *   sock         - connected socket
- *   host         - target host
- *   path         - request path
- *   content_type - Content-Type header value
- *   body         - POST body data
- *   response     - HttpResponse structure to store the response
+ *  @param sock              connected socket
+ *  @param host              target host
+ *  @param path              request path
+ *  @param content_type      Content-Type header value
+ *  @param body              POST body data
+ *  @param response          HttpResponse structure to store the response
  *
- * Returns:
- *   number of bytes received on success
- *  -1 on error
+ *  @return ERR_OK on success and an Error struct on failure
  */
-ErrorCode http_post(NetSocket *sock,
+Error http_post(NetSocket *sock,
               const char *host,
               const char *path,
               const char *content_type,

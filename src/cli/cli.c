@@ -33,15 +33,13 @@ SubCommand sub_cmnds[] = {
 int sub_cmnds_count = sizeof(sub_cmnds) / sizeof(SubCommand);
 
 /* Function Implementations */
-ErrorCode parse_arguments(int argc, char *argv[], CliArgsInfo *args_info) {
+Error parse_arguments(int argc, char *argv[], CliArgsInfo *args_info) {
     if (argc < 2) {
-        fprintf(stderr, "No command provided. Use '%s help' for usage information.\n", PROG_NAME);
-        return ERR_NO_ARGS;
+        return ERR_NEW(ERR_NO_ARGS, "Use '%s help' for usage information", PROG_NAME);
     }
 
     if (validate_command(argv[1]) == -1) {
-        fprintf(stderr, "Invalid command '%s'. Use '%s help' for usage information.\n", argv[1], PROG_NAME);
-        return ERR_INVALID_COMMAND;
+        return ERR_NEW(ERR_INVALID_COMMAND, "Invalid command '%s'. Use '%s help' for usage information.", argv[1], PROG_NAME);
     }
 
     // Initialize CLI and register commands
@@ -53,17 +51,20 @@ ErrorCode parse_arguments(int argc, char *argv[], CliArgsInfo *args_info) {
         fprintf(stderr, "%s", arg_dstr_cstr(res));
         arg_dstr_destroy(res);
         arg_cmd_uninit();
-        return ERR_INVALID_ARGS;
+        return ERR_NEW(ERR_INVALID_ARGS, "Failed to generate help message");
     }
 
+    Error err;
     int rv = arg_cmd_dispatch(argv[1], argc, argv, res);
     if (rv != SUCCESS) {
-        fprintf(stderr, "%s\n", arg_dstr_cstr(res));
+        err = ERR_NEW(ERR_INVALID_ARGS, "Failed to parse command arguments: %s", arg_dstr_cstr(res));
+    } else {
+        err = ERR_OK();
     }
     arg_dstr_destroy(res);
     arg_cmd_uninit();
 
-    return rv == SUCCESS ? SUCCESS : ERR_INVALID_ARGS;
+    return err;
 }
 
 void get_help() {
@@ -116,10 +117,11 @@ int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
     arg_str_t  *uri         = arg_str1(NULL, NULL, "<url>", "url to send request to");
     arg_str_t  *output_file = arg_str0("o", "output", "<output_file>", "output file to store the GET response");
     arg_lit_t  *raw         = arg_lit0("r", "raw", "display raw HTTP response");
+    arg_lit_t  *verbose     = arg_lit0("v", "verbose", "display verbose output");
     arg_end_t  *end         = arg_end(20);
 
     int exitcode = SUCCESS;
-    void *argtable[] = {cmd, uri, output_file, raw, end};
+    void *argtable[] = {cmd, uri, output_file, raw, verbose, end};
     if (arg_nullcheck(argtable) != 0) {
         arg_dstr_cat(res, "failed to allocate argtable");
         exitcode = ERR_OUTOFMEMORY;
@@ -135,14 +137,14 @@ int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
     // Parse URI and set values
     CliArgsInfo *args_info = (CliArgsInfo *)ctx;
     args_info->cmd = CMD_GET;
-    int status = parse_uri(uri->sval[0], &args_info->uri);
-    if (status != SUCCESS) {
+    Error err = parse_uri(uri->sval[0], &args_info->uri);
+    if (ERR_FAILED(err)) {
         arg_dstr_catf(res, "Protocol '%s' is not supported", args_info->uri.host);
-        exitcode = status;
+        exitcode = err.code;
         goto exit_get;
     }
 
-    // Set output file
+    // Set opptions
     if (output_file->count > 0) {
         args_info->options[OPTION_OUTPUT_FILE] = output_file->sval[0];
     }
@@ -150,6 +152,8 @@ int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
     // Set flags
     if (raw->count > 0) {
         args_info->flags[FLAG_RAW] = true;
+    } if (verbose->count > 0) {
+        args_info->flags[FLAG_VERBOSE] = true;
     }
 
 exit_get:
@@ -165,9 +169,10 @@ int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
     arg_str_t  *input_file  = arg_str0("i", "input", "<input_file>", "input file for the POST request body");
     arg_str_t  *output_file = arg_str0("o", "output", "<output_file>", "output file to store the POST response");
     arg_lit_t  *raw         = arg_lit0("r", "raw", "display raw HTTP response");
+    arg_lit_t  *verbose      = arg_lit0("v", "verbose", "display verbose output");
     arg_end_t  *end         = arg_end(20);
 
-    void *argtable[] = {cmd, uri, header, body, input_file, output_file, raw, end};
+    void *argtable[] = {cmd, uri, header, body, input_file, output_file, raw, verbose, end};
     int exitcode = SUCCESS;
     if (arg_nullcheck(argtable) != 0) {
         arg_dstr_cat(res, "failed to allocate argtable");
@@ -184,10 +189,10 @@ int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
     // Parse URI and set values
     CliArgsInfo *args_info = (CliArgsInfo *)ctx;
     args_info->cmd = CMD_POST;
-    int status = parse_uri(uri->sval[0], &args_info->uri);
-    if (status != SUCCESS) {
+    Error err = parse_uri(uri->sval[0], &args_info->uri);
+    if (ERR_FAILED(err)) {
         arg_dstr_catf(res, "Protocol '%s' is not supported", args_info->uri.host);
-        exitcode = status;
+        exitcode = err.code;
         goto exit_post;
     }
 
@@ -206,14 +211,15 @@ int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
     // Set input & output files
     if (input_file->count > 0) {
         args_info->options[OPTION_INPUT_FILE] = input_file->sval[0];
-    }
-    if (output_file->count > 0) {
+    } if (output_file->count > 0) {
         args_info->options[OPTION_OUTPUT_FILE] = output_file->sval[0];
     }
-    
+
     // Set flags
     if (raw->count > 0) {
         args_info->flags[FLAG_RAW] = true;
+    } if (verbose->count > 0) {
+        args_info->flags[FLAG_VERBOSE] = true;
     }
 
 exit_post:

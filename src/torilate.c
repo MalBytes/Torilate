@@ -24,7 +24,6 @@
 
 int main(int argc, char *argv[]) {
     // Variable Declarations (initialized to default values or NULL)
-    int status = 0;
     Error error = {0};
     CliArgsInfo args = {0};
     NetSocket sock = INVALID_SOCKET;
@@ -39,27 +38,24 @@ int main(int argc, char *argv[]) {
         goto cleanUp;
     } 
 
-    status = parse_arguments(argc, argv, &args);
-    if (status != SUCCESS) {
-        error.code = status;
+    error = parse_arguments(argc, argv, &args);
+    if (ERR_FAILED(error)) {
         goto cleanUp;
     }
     bool raw = args.flags[FLAG_RAW] == true;
     
     // Connect to TOR
     net_init(); // Initialize networking subsystem
-    status = net_connect(&sock, TOR_IP, TOR_PORT); 
-    if (status != SUCCESS) {
-        snprintf(error.message, sizeof(error.message), "Cannot connect to TOR at %s:%d", TOR_IP, TOR_PORT);
-        error.code = ERR_TOR_CONNECTION_FAILED;
+    error = net_connect(&sock, TOR_IP, TOR_PORT); 
+    if (ERR_FAILED(error)) {
+        error = ERR_PROPAGATE(error, "Cannot connect to TOR at %s:%d", TOR_IP, TOR_PORT);
         goto cleanUp;
     }
 
     // Establish SOCKS4 connection
-    status = socks4_connect(&sock, args.uri.host, (uint16_t)args.uri.port, PROG_NAME, args.uri.addr_type);
-    if (status != SUCCESS) {
-        snprintf(error.message, sizeof(error.message), "SOCKS4 connection to %s:%d failed", args.uri.host, args.uri.port);
-        error.code = ERR_CONNECTION_FAILED;
+    error = socks4_connect(&sock, args.uri.host, (uint16_t)args.uri.port, PROG_NAME, args.uri.addr_type);
+    if (ERR_FAILED(error)) {
+        error = ERR_PROPAGATE(error, "SOCKS4 connection to %s:%d failed", args.uri.host, args.uri.port);
         goto cleanUp;
     }
 
@@ -72,28 +68,25 @@ int main(int argc, char *argv[]) {
 
     switch (args.cmd) {
         case CMD_GET:
-            status = http_get(&sock, args.uri.host, args.uri.endpoint, &resp);
-            if (status != SUCCESS) {
-                snprintf(error.message, sizeof(error.message), "HTTP GET request to %s:%d failed", args.uri.host, args.uri.port);
-                error.code = ERR_HTTP_REQUEST_FAILED;
+            error = http_get(&sock, args.uri.host, args.uri.endpoint, &resp);
+            if (ERR_FAILED(error)) {
+                error = ERR_PROPAGATE(error, "HTTP GET request to %s:%d failed", args.uri.host, args.uri.port);
                 goto cleanUp;
             }
             // printf("Received %llu bytes\n\n", resp.bytes_received); // TODO: for verbose mode
             
             // Parse response
-            status = parse_http_response(&resp, parsed_response, sizeof(parsed_response), &resp_size, raw);
-            if (status != SUCCESS) {
-                snprintf(error.message, sizeof(error.message), "Failed to parse HTTP response");
-                error.code = status;
+            error = parse_http_response(&resp, parsed_response, sizeof(parsed_response), &resp_size, raw);
+            if (ERR_FAILED(error)) {
+                error = ERR_PROPAGATE(error, "Failed to parse HTTP response");
                 goto cleanUp;
             }
             
             // Output response
             if (args.options[OPTION_OUTPUT_FILE]) {
-                int write_status = write_to(args.options[OPTION_OUTPUT_FILE], parsed_response, resp_size);
-                if (write_status != SUCCESS) {
-                    snprintf(error.message, sizeof(error.message), "Failed to write response to file %s", args.options[OPTION_OUTPUT_FILE]);
-                    error.code = write_status;
+                error = write_to(args.options[OPTION_OUTPUT_FILE], parsed_response, resp_size);
+                if (ERR_FAILED(error)) {
+                    error = ERR_PROPAGATE(error, "Failed to write response to file %s", args.options[OPTION_OUTPUT_FILE]);
                     goto cleanUp;
                 }
                 printf("%s: Response written to %s\n", PROG_NAME, args.options[OPTION_OUTPUT_FILE]);
@@ -106,10 +99,9 @@ int main(int argc, char *argv[]) {
         case CMD_POST:
             // Read body
             if (args.options[OPTION_INPUT_FILE]) {
-                int read_status = read_from(args.options[OPTION_INPUT_FILE], &body_owned, NULL);
-                if (read_status != SUCCESS) {
-                    snprintf(error.message, sizeof(error.message), "Failed to read file %s", args.options[OPTION_INPUT_FILE]);
-                    error.code = read_status;
+                error = read_from(args.options[OPTION_INPUT_FILE], &body_owned, NULL);
+                if (ERR_FAILED(error)) {
+                    error = ERR_PROPAGATE(error, "Failed to read file %s", args.options[OPTION_INPUT_FILE]);
                     goto cleanUp;
                 }
                 body = body_owned;
@@ -117,9 +109,9 @@ int main(int argc, char *argv[]) {
                 body = args.uri.body ? args.uri.body : "";
             }
 
-            status = http_post(&sock, args.uri.host, args.uri.endpoint, args.uri.header, body, &resp);
-            if (status != SUCCESS) {
-                snprintf(error.message, sizeof(error.message), "HTTP POST request to %s:%d failed", args.uri.host, args.uri.port);
+            error = http_post(&sock, args.uri.host, args.uri.endpoint, args.uri.header, body, &resp);
+            if (ERR_FAILED(error)) {
+                error = ERR_PROPAGATE(error, "HTTP POST request to %s:%d failed", args.uri.host, args.uri.port);
                 error.code = ERR_HTTP_REQUEST_FAILED;
                 goto cleanUp;
             }
@@ -127,19 +119,17 @@ int main(int argc, char *argv[]) {
             // printf("Received %llu bytes\n\n", resp.bytes_received); // TODO: for verbose mode
 
             // Parse response
-            status = parse_http_response(&resp, parsed_response, sizeof(parsed_response), &resp_size, raw);
-            if (status != SUCCESS) {
-                snprintf(error.message, sizeof(error.message), "Failed to parse HTTP response");
-                error.code = status;
+            error = parse_http_response(&resp, parsed_response, sizeof(parsed_response), &resp_size, raw);
+            if (ERR_FAILED(error)) {
+                error = ERR_PROPAGATE(error, "Failed to parse HTTP response");
                 goto cleanUp;
             }
 
             // Output response
             if (args.options[OPTION_OUTPUT_FILE]) {
-                int write_status = write_to(args.options[OPTION_OUTPUT_FILE], parsed_response, resp_size);
-                if (write_status != SUCCESS) {
-                    snprintf(error.message, sizeof(error.message), "Failed to write response to file %s", args.options[OPTION_OUTPUT_FILE]);
-                    error.code = write_status;
+                error = write_to(args.options[OPTION_OUTPUT_FILE], parsed_response, resp_size);
+                if (ERR_FAILED(error)) {
+                    error = ERR_PROPAGATE(error, "Failed to write response to file %s", args.options[OPTION_OUTPUT_FILE]);
                     goto cleanUp;
                 }
                 printf("%s: Response written to %s\n", PROG_NAME, args.options[OPTION_OUTPUT_FILE]);
@@ -164,8 +154,13 @@ cleanUp:
     free((void*) args.uri.endpoint);
 
     // Print error message
+    bool verbose = args.flags[FLAG_VERBOSE];
+    if (error.code >= ERR_NO_ARGS && error.code <= ERR_INVALID_COMMAND) {
+        // CLI errors: always print full message (verbose or not)
+        verbose = true;
+    }
     if (error.code != SUCCESS) {
-        printf("%s\n", get_err_msg(&error));
+        printf("%s\n", get_err_msg(&error, verbose));
     }
 
     return error.code;

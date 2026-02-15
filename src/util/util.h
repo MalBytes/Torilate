@@ -30,11 +30,11 @@ char *ut_strdup(const char *s);
 char *ut_strndup(const char *s, size_t n);
 
 // Parsing utilities
-ErrorCode parse_uri(const char *uri, URI *out);
-ErrorCode parse_http_response(HttpResponse *response, char *out, size_t out_size, size_t *resp_size, bool raw);
+Error parse_uri(const char *uri, URI *out);
+Error parse_http_response(HttpResponse *response, char *out, size_t out_size, size_t *resp_size, bool raw);
 
 // File handling utilities
-ErrorCode write_to(const char *file_name, const char *data, size_t len);
-ErrorCode read_from(const char *file_name, char **buffer, size_t *out_len);
+Error write_to(const char *file_name, const char *data, size_t len);
+Error read_from(const char *file_name, char **buffer, size_t *out_len);
 
 #endif
