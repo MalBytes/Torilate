@@ -198,14 +198,9 @@ int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
 
     // Set header and body
     if (header->count > 0) {
-        args_info->uri.header = header->sval[0];
-    } else {
-        args_info->uri.header = NULL;
-    }
-    if (body->count > 0) {
-        args_info->uri.body = body->sval[0];
-    } else {
-        args_info->uri.body = NULL;
+        args_info->options[OPTION_HEADER] = header->sval[0];
+    } if (body->count > 0) {
+        args_info->options[OPTION_BODY] = body->sval[0];
     }
 
     // Set input & output files

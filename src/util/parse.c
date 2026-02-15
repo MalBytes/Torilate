@@ -39,10 +39,10 @@ Error parse_uri(const char *uri, URI *out) {
     path_start = strchr(host_start, '/');
     if (path_start) {
         out->host = ut_strndup(host_start, path_start - host_start);
-        out->endpoint = ut_strdup(path_start);
+        out->path = ut_strdup(path_start);
     } else {
         out->host = ut_strdup(host_start);
-        out->endpoint = ut_strdup("/");
+        out->path = ut_strdup("/");
     }
 
     // Check for port declaration

@@ -35,6 +35,8 @@ typedef struct {
 
 /* Indices for fetching options form the CliArgsInfo.options array */
 typedef enum {
+    OPTION_BODY,
+    OPTION_HEADER,
     OPTION_INPUT_FILE,
     OPTION_OUTPUT_FILE,
 } OptionsIndex;

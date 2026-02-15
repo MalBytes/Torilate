@@ -68,12 +68,11 @@ int main(int argc, char *argv[]) {
 
     switch (args.cmd) {
         case CMD_GET:
-            error = http_get(&sock, args.uri.host, args.uri.endpoint, &resp);
+            error = http_get(&sock, args.uri.host, args.uri.path, &resp);
             if (ERR_FAILED(error)) {
                 error = ERR_PROPAGATE(error, "HTTP GET request to %s:%d failed", args.uri.host, args.uri.port);
                 goto cleanUp;
             }
-            // printf("Received %llu bytes\n\n", resp.bytes_received); // TODO: for verbose mode
             
             // Parse response
             error = parse_http_response(&resp, parsed_response, sizeof(parsed_response), &resp_size, raw);
@@ -106,17 +105,16 @@ int main(int argc, char *argv[]) {
                 }
                 body = body_owned;
             } else {
-                body = args.uri.body ? args.uri.body : "";
+                body = args.options[OPTION_BODY];
             }
 
-            error = http_post(&sock, args.uri.host, args.uri.endpoint, args.uri.header, body, &resp);
+            error = http_post(&sock, args.uri.host, args.uri.path, args.options[OPTION_HEADER], body, &resp);
             if (ERR_FAILED(error)) {
                 error = ERR_PROPAGATE(error, "HTTP POST request to %s:%d failed", args.uri.host, args.uri.port);
                 error.code = ERR_HTTP_REQUEST_FAILED;
                 goto cleanUp;
             }
             free(body_owned); // free if allocated
-            // printf("Received %llu bytes\n\n", resp.bytes_received); // TODO: for verbose mode
 
             // Parse response
             error = parse_http_response(&resp, parsed_response, sizeof(parsed_response), &resp_size, raw);
@@ -140,18 +138,15 @@ int main(int argc, char *argv[]) {
             break;
 
         default:
-            snprintf(error.message, sizeof(error.message), "Unsupported command");
-            error.code = ERR_INVALID_ARGS;
+            error = ERR_NEW(ERR_INVALID_COMMAND, "Unsupported command");
             goto cleanUp;
     }
     
 cleanUp:
-    if (is_valid_socket(&sock)) {
-        net_close(&sock);
-    }
+    net_close(&sock);
     net_cleanup();
     free((void*) args.uri.host);
-    free((void*) args.uri.endpoint);
+    free((void*) args.uri.path);
 
     // Print error message
     bool verbose = args.flags[FLAG_VERBOSE];
