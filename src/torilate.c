@@ -42,7 +42,10 @@ int main(int argc, char *argv[]) {
     if (ERR_FAILED(error)) {
         goto cleanUp;
     }
+
+    // Extract flags for easier access
     bool raw = args.flags[FLAG_RAW] == true;
+    bool content_only = args.flags[FLAG_CONTENT_ONLY] == true;
     
     // Connect to TOR
     net_init(); // Initialize networking subsystem
@@ -75,7 +78,7 @@ int main(int argc, char *argv[]) {
             }
             
             // Parse response
-            error = parse_http_response(&resp, parsed_response, sizeof(parsed_response), &resp_size, raw);
+            error = parse_http_response(&resp, parsed_response, sizeof(parsed_response), &resp_size, raw, content_only);
             if (ERR_FAILED(error)) {
                 error = ERR_PROPAGATE(error, "Failed to parse HTTP response");
                 goto cleanUp;
@@ -117,7 +120,7 @@ int main(int argc, char *argv[]) {
             free(body_owned); // free if allocated
 
             // Parse response
-            error = parse_http_response(&resp, parsed_response, sizeof(parsed_response), &resp_size, raw);
+            error = parse_http_response(&resp, parsed_response, sizeof(parsed_response), &resp_size, raw, content_only);
             if (ERR_FAILED(error)) {
                 error = ERR_PROPAGATE(error, "Failed to parse HTTP response");
                 goto cleanUp;
@@ -140,6 +143,12 @@ int main(int argc, char *argv[]) {
         default:
             error = ERR_NEW(ERR_INVALID_COMMAND, "Unsupported command");
             goto cleanUp;
+    }
+
+    if (args.flags[FLAG_VERBOSE]) {
+        printf("\n");
+        printf("%s: Request to %s:%d completed successfully\n", PROG_NAME, args.uri.host, args.uri.port);
+        printf("%s: Status Code: %d, Bytes Received: %llu\n", PROG_NAME, resp.status_code, resp.bytes_received);
     }
     
 cleanUp:

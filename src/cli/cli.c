@@ -113,15 +113,16 @@ int validate_command(char *cmd) {
 }
 
 int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
-    arg_rex_t  *cmd         = arg_rex1(NULL,  NULL,  "get", NULL, ARG_REX_ICASE, "send a HTTP GET request");
-    arg_str_t  *uri         = arg_str1(NULL, NULL, "<url>", "url to send request to");
-    arg_str_t  *output_file = arg_str0("o", "output", "<output_file>", "output file to store the GET response");
-    arg_lit_t  *raw         = arg_lit0("r", "raw", "display raw HTTP response");
-    arg_lit_t  *verbose     = arg_lit0("v", "verbose", "display verbose output");
-    arg_end_t  *end         = arg_end(20);
+    arg_rex_t  *cmd             = arg_rex1(NULL,  NULL,  "get", NULL, ARG_REX_ICASE, "send a HTTP GET request");
+    arg_str_t  *uri             = arg_str1(NULL, NULL, "<url>", "url to send request to");
+    arg_str_t  *output_file     = arg_str0("o", "output", "<output_file>", "output file to store the GET response");
+    arg_lit_t  *raw             = arg_lit0("r", "raw", "display raw HTTP response");
+    arg_lit_t  *content_only    = arg_lit0("c", "content-only", "display only the content of the HTTP response");
+    arg_lit_t  *verbose         = arg_lit0("v", "verbose", "display verbose output");
+    arg_end_t  *end             = arg_end(20);
 
     int exitcode = SUCCESS;
-    void *argtable[] = {cmd, uri, output_file, raw, verbose, end};
+    void *argtable[] = {cmd, uri, output_file, raw, content_only, verbose, end};
     if (arg_nullcheck(argtable) != 0) {
         arg_dstr_cat(res, "failed to allocate argtable");
         exitcode = ERR_OUTOFMEMORY;
@@ -148,6 +149,9 @@ int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
     if (output_file->count > 0) {
         args_info->options[OPTION_OUTPUT_FILE] = output_file->sval[0];
     }
+    if (content_only->count > 0) {
+        args_info->flags[FLAG_CONTENT_ONLY] = true;
+    }
     
     // Set flags
     if (raw->count > 0) {
@@ -162,17 +166,18 @@ exit_get:
 }
 
 int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
-    arg_rex_t  *cmd         = arg_rex1(NULL,  NULL,  "post", NULL, ARG_REX_ICASE, "send a HTTP POST request");
-    arg_str_t  *uri         = arg_str1(NULL, NULL, "<url>", "url to send request to");
-    arg_str_t  *header      = arg_str0("t", "content-type", "<content-type>", "Content-Type header for the POST request");
-    arg_str_t  *body        = arg_str0("b", "body", "<body>", "body of the POST request");
-    arg_str_t  *input_file  = arg_str0("i", "input", "<input_file>", "input file for the POST request body");
-    arg_str_t  *output_file = arg_str0("o", "output", "<output_file>", "output file to store the POST response");
-    arg_lit_t  *raw         = arg_lit0("r", "raw", "display raw HTTP response");
-    arg_lit_t  *verbose      = arg_lit0("v", "verbose", "display verbose output");
-    arg_end_t  *end         = arg_end(20);
+    arg_rex_t  *cmd             = arg_rex1(NULL,  NULL,  "post", NULL, ARG_REX_ICASE, "send a HTTP POST request");
+    arg_str_t  *uri             = arg_str1(NULL, NULL, "<url>", "url to send request to");
+    arg_str_t  *header          = arg_str0("t", "content-type", "<content-type>", "Content-Type header for the POST request");
+    arg_str_t  *body            = arg_str0("b", "body", "<body>", "body of the POST request");
+    arg_str_t  *input_file      = arg_str0("i", "input", "<input_file>", "input file for the POST request body");
+    arg_str_t  *output_file     = arg_str0("o", "output", "<output_file>", "output file to store the POST response");
+    arg_lit_t  *raw             = arg_lit0("r", "raw", "display raw HTTP response");
+    arg_lit_t  *content_only    = arg_lit0("c", "content-only", "display only the content of the HTTP response");
+    arg_lit_t  *verbose         = arg_lit0("v", "verbose", "display verbose output");
+    arg_end_t  *end             = arg_end(20);
 
-    void *argtable[] = {cmd, uri, header, body, input_file, output_file, raw, verbose, end};
+    void *argtable[] = {cmd, uri, header, body, input_file, output_file, raw, content_only, verbose, end};
     int exitcode = SUCCESS;
     if (arg_nullcheck(argtable) != 0) {
         arg_dstr_cat(res, "failed to allocate argtable");
@@ -213,6 +218,8 @@ int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
     // Set flags
     if (raw->count > 0) {
         args_info->flags[FLAG_RAW] = true;
+    } if (content_only->count > 0) {
+        args_info->flags[FLAG_CONTENT_ONLY] = true;
     } if (verbose->count > 0) {
         args_info->flags[FLAG_VERBOSE] = true;
     }

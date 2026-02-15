@@ -51,6 +51,7 @@ typedef enum {
     FLAG_RAW,
     FLAG_FOLLOW,
     FLAG_VERBOSE,
+    FLAG_CONTENT_ONLY,
 } FlagsIndex;
 
 

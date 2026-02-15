@@ -61,7 +61,7 @@ Error parse_uri(const char *uri, URI *out) {
     return ERR_OK();
 }
 
-Error parse_http_response(HttpResponse *response, char *out, size_t out_size, size_t *resp_size, bool raw) {
+Error parse_http_response(HttpResponse *response, char *out, size_t out_size, size_t *resp_size, bool raw, bool content_only) {
     int status_code = 0;
     char status_text[64] = {0};
     int content_length = -1;
@@ -88,6 +88,28 @@ Error parse_http_response(HttpResponse *response, char *out, size_t out_size, si
 
         if (resp_size) {
             *resp_size = len;
+        }
+
+        return ERR_OK();
+    }
+
+    if (content_only) {
+        const char *header_end = strstr(response->raw, "\r\n\r\n");
+        if (!header_end) {
+            return ERR_NEW(ERR_BAD_RESPONSE, "Failed to find end of HTTP headers");
+        }
+        header_end += 4; // Move past the header-body separator
+
+        size_t body_len = response->bytes_received - (header_end - response->raw);
+        if (body_len >= out_size) {
+            body_len = out_size - 1;
+        }
+
+        memcpy(out, header_end, body_len);
+        out[body_len] = '\0';
+
+        if (resp_size) {
+            *resp_size = body_len;
         }
 
         return ERR_OK();
