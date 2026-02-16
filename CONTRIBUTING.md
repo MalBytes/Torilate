@@ -127,21 +127,3 @@ Thank you for helping improve Torilate.
 If you have questions or need guidance, feel free to open an issue and ask.
 
 — **Trident Apollo**
-
----
-
-### Why this is the right change (quick reassurance)
-
-* Commit rules live in **one authoritative place**
-* CONTRIBUTING stays concise
-* You can evolve commit policy without touching contribution flow
-* This matches how mature projects (Linux, Git, LLVM) do it
-
-If you want next, Sir, Lenerd can:
-
-* add a `commit-msg` git hook to enforce the rules
-* wire commit linting into CI
-* link `COMMIT_GUIDELINES.md` from the README
-* add a PR checklist referencing both docs
-
-Just say the word.
