@@ -26,8 +26,9 @@ typedef enum {
 } Command;
 
 typedef struct {
-    URI uri;
     Command cmd;
+    Schema schema;
+    const char *uri;
     bool flags[MAX_FLAG_COUNT];             // Array to hold boolean flags
     int values[MAX_VALUE_COUNT];            // Array to hold integer values (e.g., max redirects)
     const char *options[MAX_OPTION_COUNT];  // Array to hold string options (e.g., output file)
