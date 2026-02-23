@@ -32,7 +32,6 @@
 #define VER_PATCH   2
 #define VER_TAG     "alpha"
 
-
 typedef enum {
     HTTP,
     HTTPS,

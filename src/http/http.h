@@ -105,35 +105,35 @@ typedef struct {
 /*
  * Perform an HTTP GET request.
  *
- *  @param sock              connected socket (already tunneled via SOCKS)
- *  @param host              target host (e.g. "example.com")
- *  @param path              request path (e.g. "/index.html")
+ *  @param uri               target URI (e.g. "http://example.com/index.html")
+ *  @param follow_redirects  whether to automatically follow HTTP redirects (3xx)
+ *  @param max_redirects     maximum number of redirects to follow (if follow_redirects is true)
  *  @param response          HttpResponse structure to store the response
  *
  *  @return ERR_OK on success and an Error struct on failure
  */
-Error http_get(NetSocket *sock,
-             const char *host,
-             const char *path,
+Error http_get(const char *uri,
+             bool follow_redirects,
+             int max_redirects,
              HttpResponse *response);
 
 /*
  * Perform an HTTP POST request.
  *
- *  @param sock              connected socket
- *  @param host              target host
- *  @param path              request path
+ *  @param uri               target URI
  *  @param content_type      Content-Type header value
  *  @param body              POST body data
+ *  @param follow_redirects  whether to automatically follow HTTP redirects (3xx)
+ *  @param max_redirects     maximum number of redirects to follow (if follow_redirects is true)
  *  @param response          HttpResponse structure to store the response
  *
  *  @return ERR_OK on success and an Error struct on failure
  */
-Error http_post(NetSocket *sock,
-              const char *host,
-              const char *path,
+Error http_post(const char *uri,
               const char *content_type,
               const char *body,
+              bool follow_redirects,
+              int max_redirects,
               HttpResponse *response);
 
 #endif

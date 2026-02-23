@@ -16,6 +16,8 @@ Error parse_uri(const char *uri, URI *out) {
     char *host_start;
     char *port_start;
     char *path_start;
+
+    cleanup_uri(out); // Ensure output struct is clean before populating
     
     // Determine schema
     if (strncmp(uri, "http://", 7) == 0) {
@@ -59,6 +61,27 @@ Error parse_uri(const char *uri, URI *out) {
     out->addr_type = net_get_addr_type(out->host);
 
     return ERR_OK();
+}
+
+Error get_schema(const char *uri, Schema *out){
+     const char *schema_end = strstr(uri, "://");
+    if (!schema_end) {
+        *out = HTTP; // Default to HTTP if no schema is specified
+        return ERR_OK();
+    }
+
+    size_t len = schema_end - uri;
+
+    if (len == 4 && strncmp(uri, "http", 4) == 0) {
+        *out = HTTP;
+        return ERR_OK();
+    } if (len == 5 && strncmp(uri, "https", 5) == 0) {
+        *out = HTTPS;
+        return ERR_OK();
+    }
+
+    *out = INVALID_SCHEMA;
+    return ERR_NEW(ERR_INVALID_URI, "Unsupported URI schema '%.*s'", (int)len, uri);
 }
 
 Error parse_http_response(HttpResponse *response, char *out, size_t out_size, size_t *resp_size, bool raw, bool content_only) {
