@@ -9,6 +9,18 @@
 
 #include "util/util.h"
 
+void cleanup_uri(URI *uri) {
+    if (uri->host) {
+        free((void*) uri->host);
+        uri->host = NULL;
+    }
+    if (uri->path) {
+        free((void*) uri->path);
+        uri->path = NULL;
+    }
+
+    memset(uri, 0, sizeof(URI));
+}
 
 char *ut_strdup(const char *s) {
     size_t size = strlen(s) + 1;
@@ -16,6 +28,7 @@ char *ut_strdup(const char *s) {
     if (p != NULL) {
         memcpy(p, s, size);
     }
+    p[size - 1] = '\0';
     return p;
 }
 

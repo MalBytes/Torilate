@@ -24,11 +24,13 @@ typedef struct {
 } URI;
 
 // Memory management utilities
+void cleanup_uri(URI *uri);
 char *ut_strdup(const char *s);
 char *ut_strndup(const char *s, size_t n);
 
 // Parsing utilities
 Error parse_uri(const char *uri, URI *out);
+Error get_schema(const char *uri, Schema *out);
 Error parse_http_response(HttpResponse *response, char *out, size_t out_size, size_t *resp_size, bool raw, bool content_only);
 
 // File handling utilities
