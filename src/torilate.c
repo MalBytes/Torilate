@@ -26,7 +26,6 @@ int main(int argc, char *argv[]) {
     // Variable Declarations (initialized to default values or NULL)
     Error error = {0};
     CliArgsInfo args = {0};
-    NetSocket sock = INVALID_SOCKET;
 
     // Initialize error structure
     error.code = SUCCESS;
@@ -43,24 +42,14 @@ int main(int argc, char *argv[]) {
         goto cleanUp;
     }
 
-    // Extract flags for easier access
+    // Extract flags and values for easier access
     bool raw = args.flags[FLAG_RAW] == true;
+    bool follow = args.flags[FLAG_FOLLOW] == true;
     bool content_only = args.flags[FLAG_CONTENT_ONLY] == true;
-    
-    // Connect to TOR
-    net_init(); // Initialize networking subsystem
-    error = net_connect(&sock, TOR_IP, TOR_PORT); 
-    if (ERR_FAILED(error)) {
-        error = ERR_PROPAGATE(error, "Cannot connect to TOR at %s:%d", TOR_IP, TOR_PORT);
-        goto cleanUp;
-    }
 
-    // Establish SOCKS4 connection
-    error = socks4_connect(&sock, args.uri.host, (uint16_t)args.uri.port, PROG_NAME, args.uri.addr_type);
-    if (ERR_FAILED(error)) {
-        error = ERR_PROPAGATE(error, "SOCKS4 connection to %s:%d failed", args.uri.host, args.uri.port);
-        goto cleanUp;
-    }
+    int max_redirects = args.values[VAL_MAX_REDIRECTS];
+
+    net_init(); // Initialize networking subsystem
 
     // Send HTTP request based on command
     HttpResponse resp;
@@ -71,9 +60,9 @@ int main(int argc, char *argv[]) {
 
     switch (args.cmd) {
         case CMD_GET:
-            error = http_get(&sock, args.uri.host, args.uri.path, &resp);
+            error = http_get(args.uri, follow, max_redirects, &resp);
             if (ERR_FAILED(error)) {
-                error = ERR_PROPAGATE(error, "HTTP GET request to %s:%d failed", args.uri.host, args.uri.port);
+                error = ERR_PROPAGATE(error, "HTTP GET request to URL '%s' failed", args.uri);
                 goto cleanUp;
             }
             
@@ -111,9 +100,9 @@ int main(int argc, char *argv[]) {
                 body = args.options[OPTION_BODY];
             }
 
-            error = http_post(&sock, args.uri.host, args.uri.path, args.options[OPTION_HEADER], body, &resp);
+            error = http_post(args.uri, args.options[OPTION_HEADER], body, follow, max_redirects, &resp);
             if (ERR_FAILED(error)) {
-                error = ERR_PROPAGATE(error, "HTTP POST request to %s:%d failed", args.uri.host, args.uri.port);
+                error = ERR_PROPAGATE(error, "HTTP POST request to URL '%s' failed", args.uri);
                 error.code = ERR_HTTP_REQUEST_FAILED;
                 goto cleanUp;
             }
@@ -147,15 +136,12 @@ int main(int argc, char *argv[]) {
 
     if (args.flags[FLAG_VERBOSE]) {
         printf("\n");
-        printf("%s: Request to %s:%d completed successfully\n", PROG_NAME, args.uri.host, args.uri.port);
+        printf("%s: Request to URL '%s' completed successfully\n", PROG_NAME, args.uri);
         printf("%s: Status Code: %d, Bytes Received: %llu\n", PROG_NAME, resp.status_code, resp.bytes_received);
     }
     
 cleanUp:
-    net_close(&sock);
     net_cleanup();
-    free((void*) args.uri.host);
-    free((void*) args.uri.path);
 
     // Print error message
     bool verbose = args.flags[FLAG_VERBOSE];
