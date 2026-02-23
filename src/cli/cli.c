@@ -67,24 +67,42 @@ Error parse_arguments(int argc, char *argv[], CliArgsInfo *args_info) {
     return err;
 }
 
-void get_help() {
-    arg_rex_t  *cmd        = arg_rex1(NULL,  NULL,  "get", NULL, ARG_REX_ICASE, "send a HTTP GET request");
-    arg_str_t  *uri        = arg_str1(NULL, NULL, "<url>", "url to send request to");
-    arg_lit_t  *raw        = arg_lit0("r", "raw", "display raw HTTP response");
-    arg_end_t  *end        = arg_end(20);
+void get_help(void) {    
+    printf("\nUsage:\n");
+    printf("  %s <command> <url> [options] [flags]\n\n", PROG_NAME);
 
-    void *argtable[] = {cmd, uri, raw, end};
-    if (arg_nullcheck(argtable) != 0) {
-        fprintf(stderr, "Insufficient memory\n");
-        return;
+    printf("Description:\n");
+    printf("  A command-line utility that routes network traffic through the TOR network.\n\n");
+
+    /* -------------------- Commands -------------------- */
+    printf("Commands:\n");
+    for (int i = 0; i < sub_cmnds_count; i++) {
+        printf("  %-8s  %s\n", sub_cmnds[i].name, sub_cmnds[i].description);
     }
+    printf("\n");
 
-    printf("Usage: %s", PROG_NAME);
-    arg_print_syntax(stdout, argtable, "\n\n");
-    printf("A command-line utility that routes network traffic through the TOR network \n\n");
-    arg_print_glossary(stdout, argtable, "  %-25s %s\n");
+    /* -------------------- Common Options -------------------- */
+    printf("Options:\n");
+    printf("  -o,  --output <file>        output file to store response\n");
+    printf("      --max-redirs <n>        follow redirects up to <n> times (default: 50)\n");
+    printf("  -t,  --content-type <type>  Content-Type header for POST request\n");
+    printf("  -b,  --body <body>          body of the POST request\n");
+    printf("  -i,  --input <file>         input file for POST request body\n");
+    printf("\n");
 
-    arg_freetable(argtable, sizeof(argtable)/sizeof(argtable[0]));
+    /* -------------------- Flags -------------------- */
+    printf("Flags:\n");
+    printf("  -fl, --follow               follow HTTP redirects\n");
+    printf("  -r,  --raw                  display raw HTTP response\n");
+    printf("  -c,  --content-only         display only response content\n");
+    printf("  -v,  --verbose              display verbose output\n");
+    printf("\n");
+
+    printf("Examples:\n");
+    printf("  %s get example.com\n", PROG_NAME);
+    printf("  %s get httpbin.org/redirect/3 -fv\n", PROG_NAME);
+    printf("  %s post example.com -t application/json -b '{\"key\":\"value\"}'\n", PROG_NAME);
+    printf("\n");
 }
 
 /* Helper Functions */
