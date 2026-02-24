@@ -33,8 +33,9 @@ Each commit message **must** follow this structure:
 | `[REMOVED]`  | Removed an existing feature                    |
 | `[UPDATE]`   | Updated existing logic or file content         |
 | `[UPD_FEAT]` | Updated or enhanced an existing feature        |
-| `[BUILD]`    | Modified build system or build files           |
-| `[CONF]`     | Updated configuration files                    |
+| `[CONF]`     | Updated or added configuration files           |
+| `[DOCS]`     | Updated or added documentaitons files          |
+| `[BUILD]`    | Modified/added build system or build files     |
 | `[REFACTOR]` | Refactored code without changing behavior      |
 | `[REBASE]`   | Major restructuring or rewrite of the codebase |
 
