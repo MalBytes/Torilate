@@ -75,16 +75,13 @@ torilate <command> <url> [options] [flags]
 ### Command Examples
 
 ```bash
-torilate get <url> [-r|--raw]
-```
-```bash
-torilate post <url> [-t|--content-type=<content-type>] [-b|--body=<body>] [-r|--raw]
+torilate get example.com -fv
 ```
 
 ### Verify Tor routing
 
 ```bash
-torilate get http://httpbin.org/ip
+torilate get http://httpbin.org/ip -c
 ```
 
 Expected response:
@@ -96,6 +93,12 @@ Expected response:
 ```
 
 If the IP differs from your real public IP, the request is successfully routed through Tor.
+
+### For Mode Details
+
+```bash
+torilate help
+```
 
 ---
 
