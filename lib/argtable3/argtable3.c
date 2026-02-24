@@ -6087,6 +6087,98 @@ void arg_print_glossary_gnu(FILE* fp, void** argtable) {
 }
 
 /**
+ * Prints the glossary in configurable GNU-style format.
+ *
+ * This function extends arg_print_glossary_gnu_ds() by allowing
+ * full control over indentation, option column width, description
+ * alignment, and line wrapping behavior.
+ *
+ * Compared to arg_print_glossary():
+ *   - Wraps description text at a configurable column width
+ *   - Supports custom left indentation
+ *   - Allows adjustable option column width
+ *   - Allows configurable description start column
+ *   - Does not accept user-defined format strings
+ *
+ * Parameters:
+ *   ds                  Dynamic string buffer to write output into
+ *   argtable            NULL-terminated argument table
+ *   indent              Number of spaces to indent each entry
+ *   option_width        Width reserved for the option syntax column
+ *   description_column  Column at which description text begins
+ *   wrap_width          Maximum column width before wrapping occurs
+ *
+ * Notes:
+ *   - If the option syntax exceeds option_width, the description
+ *     is printed on the next line.
+ *   - The function preserves strict GNU-style alignment semantics
+ *     while allowing flexible layout control.
+ *
+ * Intended for advanced CLI formatting scenarios where the default
+ * GNU formatter spacing is insufficient.
+ */
+void arg_print_glossary_gnu_ds_ex(arg_dstr_t ds, void** argtable, int indent, int option_width, int description_column, int wrap_width) {
+    struct arg_hdr** table = (struct arg_hdr**)argtable;
+
+    for (int i = 0; !(table[i]->flag & ARG_TERMINATOR); i++) {
+
+        if (!table[i]->glossary)
+            continue;
+
+        char syntax[256] = "";
+        const char* shortopts = table[i]->shortopts;
+        const char* longopts  = table[i]->longopts;
+        const char* datatype  = table[i]->datatype;
+        const char* glossary  = table[i]->glossary;
+
+        if (!shortopts && longopts) {
+            int short_prefix_width = 4;  /* "-x, " */
+            memset(syntax, ' ', short_prefix_width);
+            syntax[short_prefix_width] = '\0';
+
+        }
+
+        arg_cat_optionv(
+            syntax,
+            sizeof(syntax) - 1,
+            shortopts,
+            longopts,
+            datatype,
+            table[i]->flag & ARG_HASOPTVALUE,
+            ", "
+        );
+
+        /* If syntax too wide, push glossary to next line */
+        if ((int)strlen(syntax) > option_width) {
+            arg_dstr_catf(ds, "%*s%-*s\n", indent, "", option_width, syntax);
+            syntax[0] = '\0';
+        }
+
+        arg_dstr_catf(ds, "%*s%-*s ", indent, "", option_width, syntax);
+
+        arg_print_formatted_ds(ds, description_column, wrap_width, glossary);
+    }
+
+    arg_dstr_cat(ds, "\n");
+}
+
+void arg_print_glossary_gnu_ex(FILE* fp, void** argtable, int indent, int option_width, int description_column, int wrap_width) {
+    arg_dstr_t ds = arg_dstr_create();
+
+    arg_print_glossary_gnu_ds_ex(
+        ds,
+        argtable,
+        indent,
+        option_width,
+        description_column,
+        wrap_width
+    );
+
+    fputs(arg_dstr_cstr(ds), fp);
+    arg_dstr_destroy(ds);
+}
+
+/**
  * Checks the argtable[] array for NULL entries and returns 1
  * if any are found, zero otherwise.
  */

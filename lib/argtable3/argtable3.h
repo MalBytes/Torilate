@@ -1551,6 +1551,102 @@ ARG_EXTERN void arg_print_glossary_gnu(FILE* fp, void** argtable);
 ARG_EXTERN void arg_print_glossary_gnu_ds(arg_dstr_t ds, void** argtable);
 
 /**
+ * Prints the argument glossary using configurable GNU formatting conventions
+ * to a file stream.
+ *
+ * The `arg_print_glossary_gnu_ex` function generates a glossary of
+ * command-line options and arguments formatted according to GNU-style
+ * conventions, while allowing full control over layout parameters such as
+ * indentation, option column width, description alignment, and line wrapping.
+ *
+ * Unlike `arg_print_glossary_gnu`, which uses fixed internal formatting
+ * values (including 80-character wrapping and predefined column widths),
+ * this extended version enables callers to customize:
+ *
+ *   - Left indentation for each entry
+ *   - Width of the option syntax column
+ *   - Starting column of the description text
+ *   - Maximum wrapping width for formatted output
+ *
+ * If the formatted option syntax exceeds the specified option column width,
+ * the description text is automatically printed on the following line to
+ * preserve alignment and readability.
+ *
+ * The formatted glossary is written directly to the specified file stream
+ * (`fp`). This function is useful when generating help output tailored for
+ * wide terminals, custom CLI layouts, or applications requiring refined
+ * control over GNU-style formatting.
+ *
+ * Example usage:
+ * ```
+ * arg_print_glossary_gnu_ex(stdout, argtable,
+ *                           2,    // indent
+ *                           35,   // option column width
+ *                           40,   // description start column
+ *                           100); // wrap width
+ * ```
+ *
+ * @param fp                  Output file stream to write to (e.g., `stdout`
+ *                            or `stderr`).
+ * @param argtable            Array of argument table structs describing the
+ *                            available options and arguments.
+ * @param indent              Number of spaces to indent each entry.
+ * @param option_width        Width reserved for the option syntax column.
+ * @param description_column  Column at which the description text begins.
+ * @param wrap_width          Maximum column width before wrapping occurs.
+ */
+ARG_EXTERN void arg_print_glossary_gnu_ex(FILE* fp, void** argtable, int indent, int option_width, int description_column, int wrap_width);
+
+/**
+ * Prints the argument glossary using configurable GNU formatting conventions
+ * to a dynamic string.
+ *
+ * The `arg_print_glossary_gnu_ds_ex` function generates a glossary of
+ * command-line options and arguments using GNU-style formatting rules, while
+ * allowing full control over layout parameters such as indentation, option
+ * column width, description alignment, and line wrapping.
+ *
+ * Unlike `arg_print_glossary_gnu_ds`, which uses fixed internal formatting
+ * values (e.g., 80-character wrapping and predefined column widths), this
+ * extended version allows callers to customize:
+ *
+ *   - Left indentation for each entry
+ *   - Width of the option syntax column
+ *   - Starting column of the description text
+ *   - Maximum wrapping width for formatted output
+ *
+ * The formatted glossary is written to the specified dynamic string object
+ * (`arg_dstr_t`). This function is useful for applications requiring enhanced
+ * control over help text layout, such as wide terminal displays, embedded
+ * systems, GUI front-ends, or custom CLI styling.
+ *
+ * If the formatted option syntax exceeds the specified option column width,
+ * the description text is automatically printed on the following line to
+ * preserve alignment.
+ *
+ * Example usage:
+ * ```
+ * arg_dstr_t ds = arg_dstr_create();
+ * arg_print_glossary_gnu_ds_ex(ds, argtable,
+ *                              2,    // indent
+ *                              35,   // option column width
+ *                              40,   // description start column
+ *                              100); // wrap width
+ * printf("%s", arg_dstr_cstr(ds));
+ * arg_dstr_destroy(ds);
+ * ```
+ *
+ * @param ds                  Dynamic string object to write to.
+ * @param argtable            Array of argument table structs describing the
+ *                            available options and arguments.
+ * @param indent              Number of spaces to indent each entry.
+ * @param option_width        Width reserved for the option syntax column.
+ * @param description_column  Column at which the description text begins.
+ * @param wrap_width          Maximum column width before wrapping occurs.
+ */
+ARG_EXTERN void arg_print_glossary_gnu_ds_ex(arg_dstr_t ds, void** argtable, int indent, int option_width, int description_column, int wrap_width);
+
+/**
  * Prints the details of all errors stored in the end data structure.
  *
  * The `arg_print_errors` function writes formatted error messages for all
