@@ -120,6 +120,7 @@ Planned improvements include:
 - [x] URI parsing & resolution
 - [x] HTTP redirect handling
 - [x] Improved protocol parsing
+- [x] Custom Header options
 - [ ] HTTPS (TLS) support
 - [ ] HTTP chunked transfer encoding handling
 - [ ] SOCKS5 support

@@ -161,16 +161,24 @@ This keeps it **pure, reusable, and testable**.
 **Current Capabilities**
 
 * HTTP/1.1 (plaintext only)
-* GET and POST
-* Status code extraction
-* Raw response buffering
-
+* GET and POST methods
+* Custom HTTP headers (multiple per request)
+* Automatic redirect following (3xx status codes)
+* Configurable max redirect limit
+* Relative and absolute redirect URL resolution
+* POST-to-GET conversion on 301/302/303 redirects (RFC-compliant)
+* Status code and status text extraction
+* Content-Length header parsing
+* Response buffering
+* Multiple output modes (raw, content-only, formatted)
+  
 **Limitations (by design)**
 
 * No TLS (HTTPS not supported yet)
 * No redirect following
 * No chunked decoding
 * No compression handling
+* No persistent connections (Connection: close always used)
 
 ---
 
