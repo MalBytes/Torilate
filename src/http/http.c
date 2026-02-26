@@ -10,6 +10,9 @@
         for use over Torilate network tunnels.
 */
 
+#ifndef _WIN32
+#include <strings.h>
+#endif
 #include "http/http.h"
 #include "util/util.h"
 

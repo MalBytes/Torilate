@@ -344,7 +344,7 @@ int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
         }
 
         for (int i = 0; i < count; i++) {
-            values[i] = strdup(args.common.header->sval[i]);
+            values[i] = ut_strdup(args.common.header->sval[i]);
             if (!values[i]) {
                 // cleanup previously allocated strings
                 for (int j = 0; j < i; j++)
@@ -442,7 +442,7 @@ int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
         }
 
         for (int i = 0; i < count; i++) {
-            values[i] = strdup(args.common.header->sval[i]);
+            values[i] = ut_strdup(args.common.header->sval[i]);
             if (!values[i]) {
                 // cleanup previously allocated strings
                 for (int j = 0; j < i; j++)
