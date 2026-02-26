@@ -96,7 +96,7 @@ typedef enum {
     HTTP_NETWORK_AUTHENTICATION_REQUIRED = 511
 } HttpStatusCode;
 
-typedef struct {
+typedef struct HttpResponse {
     uint64_t bytes_received;
     HttpStatusCode status_code;
     char raw[HTTP_MAX_RESPONSE];

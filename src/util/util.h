@@ -18,7 +18,7 @@
 // Forward declarations
 typedef struct CliArgsInfo CliArgsInfo;
 
-typedef struct {
+typedef struct URI {
     int port;
     Schema schema;
     const char *host;

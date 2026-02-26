@@ -103,7 +103,7 @@ typedef enum {
  * Stores multiple values for options that can be specified multiple times
  * (e.g., -H "header1" -H "header2").
  */
-typedef struct {
+typedef struct MultiValueOption {
     int count;            // Number of values in the array
     const char **values;  // Array of string values
 } MultiValueOption;

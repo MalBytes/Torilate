@@ -19,7 +19,7 @@
 #define INVALID_SOCKET (NetSocket){ .handle = -1 } // Invalid socket representation, handle is -1
 
 /* Opaque socket handle */
-typedef struct {
+typedef struct NetSocket {
     int handle;
 } NetSocket;
 

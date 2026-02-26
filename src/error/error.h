@@ -71,7 +71,7 @@ typedef enum {
  * Represents an error with both a code and optional contextual message.
  * Can be passed by value (small enough) or by pointer.
  */
-typedef struct {
+typedef struct Error {
     ErrorCode code;
     char message[512];
 } Error;
