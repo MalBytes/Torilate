@@ -184,7 +184,7 @@ int validate_command(char *cmd) {
 void init_common_args(CommonArgs *args, const char *cmd_name, const char *cmd_description) {
     args->cmd          = arg_rex1(NULL, NULL, cmd_name, NULL, ARG_REX_ICASE, cmd_description);
     args->uri          = arg_str1(NULL, NULL, "<url>", "URL to send request to");
-    args->header       = arg_str0("h", "header", "<header>", "HTTP header to include in the request");
+    args->header       = arg_strn("H", "header", "<header>", 0, 50, "HTTP header to include in the request");
     args->output_file  = arg_str0("o", "output", "<output_file>", "output file to store response");
     args->max_redirs   = arg_int0(NULL, "max-redirs", "<max_redirects>", "follow redirects up to the specified number of times");
     args->follow       = arg_lit0("fl", "follow", "follow redirects");
@@ -330,6 +330,38 @@ int cmd_get_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
         args_info->options[OPTION_OUTPUT_FILE] = args.common.output_file->sval[0];
     }
     
+    if (args.common.header->count > 0) {
+        int count = args.common.header->count;
+        args_info->multi_options[MULTI_OPTION_HEADERS].count = 0;
+        args_info->multi_options[MULTI_OPTION_HEADERS].values = NULL;
+
+        char **values = malloc(sizeof(char*) * count);
+        if (!values) {
+            err = ERR_NEW(ERR_OUTOFMEMORY, "Failed to allocate memory for headers");
+            arg_dstr_catf(res, err.message);
+            exitcode = err.code;
+            goto exit_get;
+        }
+
+        for (int i = 0; i < count; i++) {
+            values[i] = strdup(args.common.header->sval[i]);
+            if (!values[i]) {
+                // cleanup previously allocated strings
+                for (int j = 0; j < i; j++)
+                    free(values[j]);
+                free(values);
+
+                err = ERR_NEW(ERR_OUTOFMEMORY, "Failed to allocate memory for header value");
+                arg_dstr_catf(res, err.message);
+                exitcode = err.code;
+                goto exit_get;
+            }
+        }
+
+        args_info->multi_options[MULTI_OPTION_HEADERS].values = (const char **)values;
+        args_info->multi_options[MULTI_OPTION_HEADERS].count = count;
+    }
+    
     if (args.common.max_redirs->count > 0) {
         args_info->values[VAL_MAX_REDIRECTS] = args.common.max_redirs->ival[0];
     } else {
@@ -394,6 +426,38 @@ int cmd_post_proc (int argc, char *argv[], arg_dstr_t res, void *ctx) {
     }
     if (args.common.output_file->count > 0) {
         args_info->options[OPTION_OUTPUT_FILE] = args.common.output_file->sval[0];
+    }
+
+    if (args.common.header->count > 0) {
+        int count = args.common.header->count;
+        args_info->multi_options[MULTI_OPTION_HEADERS].count = 0;
+        args_info->multi_options[MULTI_OPTION_HEADERS].values = NULL;
+
+        char **values = malloc(sizeof(char*) * count);
+        if (!values) {
+            err = ERR_NEW(ERR_OUTOFMEMORY, "Failed to allocate memory for headers");
+            arg_dstr_catf(res, err.message);
+            exitcode = err.code;
+            goto exit_post;
+        }
+
+        for (int i = 0; i < count; i++) {
+            values[i] = strdup(args.common.header->sval[i]);
+            if (!values[i]) {
+                // cleanup previously allocated strings
+                for (int j = 0; j < i; j++)
+                    free(values[j]);
+                free(values);
+
+                err = ERR_NEW(ERR_OUTOFMEMORY, "Failed to allocate memory for header value");
+                arg_dstr_catf(res, err.message);
+                exitcode = err.code;
+                goto exit_post;
+            }
+        }
+
+        args_info->multi_options[MULTI_OPTION_HEADERS].values = (const char **)values;
+        args_info->multi_options[MULTI_OPTION_HEADERS].count = count;
     }
 
     if (args.common.max_redirs->count > 0) {

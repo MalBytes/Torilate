@@ -30,6 +30,9 @@
 /** Maximum number of string options in CliArgsInfo */
 #define MAX_OPTION_COUNT   8
 
+/** Maximum number of multi-value options in CliArgsInfo */
+#define MAX_MULTI_OPTION_COUNT   6
+
 /* ============================================================================
  * Enumerations
  * ============================================================================ */
@@ -52,7 +55,6 @@ typedef enum {
  */
 typedef enum {
     OPTION_BODY,         // POST request body content
-    OPTION_HEADER,       // Content-Type header value
     OPTION_INPUT_FILE,   // Input file path for POST body
     OPTION_OUTPUT_FILE,  // Output file path for response storage
 } OptionsIndex;
@@ -80,9 +82,31 @@ typedef enum {
     FLAG_CONTENT_ONLY,  // Display only response body (no headers)
 } FlagsIndex;
 
+/**
+ * MultiOptionsIndex - Indices for accessing multi-value options in CliArgsInfo.multi_options[]
+ * 
+ * Use these enum values to index into the multi_options array for type-safe access
+ * to parsed command-line multi-value parameters (e.g., multiple -H flags).
+ */
+typedef enum {
+    MULTI_OPTION_HEADERS,  // HTTP headers to include in request
+    MULTI_OPTION_COUNT,   // Number of multi-value options (for bounds checking)
+} MultiOptionsIndex;
+
 /* ============================================================================
  * Data Structures
  * ============================================================================ */
+
+/**
+ * MultiValueOption - Container for multi-valued command-line options
+ * 
+ * Stores multiple values for options that can be specified multiple times
+ * (e.g., -H "header1" -H "header2").
+ */
+typedef struct {
+    int count;            // Number of values in the array
+    const char **values;  // Array of string values
+} MultiValueOption;
 
 /**
  * CliArgsInfo - Parsed command-line arguments
@@ -102,13 +126,14 @@ typedef enum {
  *   bool verbose = args.flags[FLAG_VERBOSE];
  *   const char *output = args.options[OPTION_OUTPUT_FILE];
  */
-typedef struct {
-    Command cmd;                            // Parsed command (GET or POST)
-    Schema schema;                          // URL schema (HTTP, HTTPS, etc.)
-    const char *uri;                        // Target URL for HTTP request
-    bool flags[MAX_FLAG_COUNT];             // Boolean flags (indexed by FlagsIndex)
-    int values[MAX_VALUE_COUNT];            // Integer values (indexed by ValuesIndex)
-    const char *options[MAX_OPTION_COUNT];  // String options (indexed by OptionsIndex)
+typedef struct CliArgsInfo {
+    Command cmd;                                      // Parsed command (GET or POST)
+    Schema schema;                                    // URL schema (HTTP, HTTPS, etc.)
+    const char *uri;                                  // Target URL for HTTP request
+    bool flags[MAX_FLAG_COUNT];                       // Boolean flags (indexed by FlagsIndex)
+    int values[MAX_VALUE_COUNT];                      // Integer values (indexed by ValuesIndex)
+    const char *options[MAX_OPTION_COUNT];            // String options (indexed by OptionsIndex)
+    MultiValueOption multi_options[MAX_MULTI_OPTION_COUNT];  // Multi-value options (indexed by MultiOptionsIndex)
 } CliArgsInfo;
 
 /* ============================================================================
