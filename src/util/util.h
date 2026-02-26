@@ -15,6 +15,9 @@
 #include "error/error.h"
 #include "socks/socks4.h"
 
+// Forward declarations
+typedef struct CliArgsInfo CliArgsInfo;
+
 typedef struct {
     int port;
     Schema schema;
@@ -27,8 +30,10 @@ typedef struct {
 void cleanup_uri(URI *uri);
 char *ut_strdup(const char *s);
 char *ut_strndup(const char *s, size_t n);
+void cleanup_args(CliArgsInfo *args_info);
 
 // Parsing utilities
+Error validate_header(char *header);
 Error parse_uri(const char *uri, URI *out);
 Error get_schema(const char *uri, Schema *out);
 Error parse_http_response(HttpResponse *response, char *out, size_t out_size, size_t *resp_size, bool raw, bool content_only);

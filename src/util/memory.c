@@ -7,6 +7,7 @@
         Memory utility function implementations for Torilate.
 */
 
+#include "cli/cli.h"
 #include "util/util.h"
 
 void cleanup_uri(URI *uri) {
@@ -44,4 +45,22 @@ char *ut_strndup(const char *s, size_t n) {
         p[n1] = '\0';
     }
     return p;
+}
+
+void cleanup_args(CliArgsInfo *args_info) {
+    if (!args_info) {
+        return;
+    }
+
+    for (int i=0; i < MULTI_OPTION_COUNT; i++) {
+        if (args_info->multi_options[i].values) {
+            for (int j = 0; j < args_info->multi_options[i].count; j++) {
+                free((void*)args_info->multi_options[i].values[j]);
+            }
+            free((void*)args_info->multi_options[i].values);
+        }
+    }
+    
+    // Zero out the structure
+    memset(args_info, 0, sizeof(CliArgsInfo));
 }
