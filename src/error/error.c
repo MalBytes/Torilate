@@ -35,6 +35,7 @@ static const char *err_messg_list[ERR_COUNT] = {
     [ERR_INVALID_URI]               = "Invalid URL",
     [ERR_BAD_RESPONSE]              = "Bad or malformed response",
     [ERR_INVALID_SCHEMA]            = "Unsupported URL method or schema",
+    [ERR_INVALID_HEADER]            = "Invalid HTTP header",
     [ERR_HTTP_REQUEST_FAILED]       = "HTTP request failed",
     [ERR_HTTP_REDIRECT_LIMIT]       = "Exceeded maximum HTTP redirects",
     [ERR_HTTP_REDIRECT_FAILED]      = "Failed to follow HTTP redirect",
