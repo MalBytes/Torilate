@@ -27,10 +27,6 @@ int main(int argc, char *argv[]) {
     Error error = {0};
     CliArgsInfo args = {0};
 
-    // Initialize error structure
-    error.code = SUCCESS;
-    memset(error.message, 0, sizeof(error.message));
-    
     // Argument validation (temporary)
     if (argc == 2 && (strcmp(argv[1], "help") == 0)) {
         get_help();
@@ -41,14 +37,14 @@ int main(int argc, char *argv[]) {
     if (ERR_FAILED(error)) {
         goto cleanUp;
     }
-
+    
     // Extract flags and values for easier access
     bool raw = args.flags[FLAG_RAW] == true;
     bool follow = args.flags[FLAG_FOLLOW] == true;
     bool content_only = args.flags[FLAG_CONTENT_ONLY] == true;
-
+    
     int max_redirects = args.values[VAL_MAX_REDIRECTS];
-
+    
     net_init(); // Initialize networking subsystem
 
     // Send HTTP request based on command
@@ -60,7 +56,7 @@ int main(int argc, char *argv[]) {
 
     switch (args.cmd) {
         case CMD_GET:
-            error = http_get(args.uri, follow, max_redirects, &resp);
+            error = http_get(args.uri, args.multi_options[MULTI_OPTION_HEADERS].values, args.multi_options[MULTI_OPTION_HEADERS].count, follow, max_redirects, &resp);
             if (ERR_FAILED(error)) {
                 error = ERR_PROPAGATE(error, "HTTP GET request to URL '%s' failed", args.uri);
                 goto cleanUp;
@@ -100,7 +96,7 @@ int main(int argc, char *argv[]) {
                 body = args.options[OPTION_BODY];
             }
 
-            error = http_post(args.uri, args.options[OPTION_HEADER], body, follow, max_redirects, &resp);
+            error = http_post(args.uri, body, args.multi_options[MULTI_OPTION_HEADERS].values, args.multi_options[MULTI_OPTION_HEADERS].count, follow, max_redirects, &resp);
             if (ERR_FAILED(error)) {
                 error = ERR_PROPAGATE(error, "HTTP POST request to URL '%s' failed", args.uri);
                 error.code = ERR_HTTP_REQUEST_FAILED;
@@ -142,6 +138,7 @@ int main(int argc, char *argv[]) {
     
 cleanUp:
     net_cleanup();
+    cleanup_args(&args);
 
     // Print error message
     bool verbose = args.flags[FLAG_VERBOSE];

@@ -84,6 +84,50 @@ Error get_schema(const char *uri, Schema *out){
     return ERR_NEW(ERR_INVALID_URI, "Unsupported URI schema '%.*s'", (int)len, uri);
 }
 
+Error validate_header(char *header) {
+    if (!header) {
+        return ERR_NEW(ERR_INVALID_HEADER, "Header is NULL");
+    }
+
+    // Trim leading whitespace
+    while (*header && isspace((unsigned char)*header)) {
+        header++;
+    }
+
+    if (*header == '\0') {
+        return ERR_NEW(ERR_INVALID_HEADER, "Header is empty");
+    }
+
+    // Find the colon separator
+    char *colon = strchr(header, ':');
+    if (!colon) {
+        return ERR_NEW(ERR_INVALID_HEADER, "Header missing ':' separator in '%s'", header);
+    }
+
+    // Validate key (field name)
+    char *key_end = colon;
+    for (char *p = header; p < key_end; p++) {
+        unsigned char c = (unsigned char)*p;
+        // HTTP field names must be printable ASCII, no whitespace or control chars
+        if (c <= 32 || c >= 127) {
+            return ERR_NEW(ERR_INVALID_HEADER, "Invalid character '%c' in header key '%s'", c, header);
+        }
+    }
+
+    // Check if key is empty
+    if (header == colon) {
+        return ERR_NEW(ERR_INVALID_HEADER, "Header key is empty in '%s'", header);
+    }
+
+    // Validate value exists (can be empty but must have at least colon+space or colon+value)
+    char *value = colon + 1;
+    if (*value == '\0') {
+        return ERR_NEW(ERR_INVALID_HEADER, "Header value is missing in '%s'", header);
+    }
+    
+    return ERR_OK();
+}
+
 Error parse_http_response(HttpResponse *response, char *out, size_t out_size, size_t *resp_size, bool raw, bool content_only) {
     int status_code = 0;
     char status_text[64] = {0};

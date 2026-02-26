@@ -17,15 +17,15 @@
 /* Function Prototypes*/
 static Error http_send(NetSocket *sock, const char *request);
 static Error http_recv_response(NetSocket *sock, HttpResponse *out);
-static Error http_get_once(NetSocket *sock, const char *host, const char *path, int port, NetAddrType addr_type, HttpResponse *out);
-static Error http_post_once(NetSocket *sock, const char *host, const char *path, int port, NetAddrType addr_type, const char *content_type, const char *body, HttpResponse *out);
+static Error http_get_once(NetSocket *sock, const char *host, const char *path, int port, NetAddrType addr_type, const char **headers, int headers_count, HttpResponse *out);
+static Error http_post_once(NetSocket *sock, const char *host, const char *path, int port, NetAddrType addr_type, const char *body, const char **headers, int headers_count, HttpResponse *out);
 
 /* Public API */
-Error http_get(const char *uri, bool follow_redirects, int max_redirects, HttpResponse *response) {
-    NetSocket sock;
-    URI parsed_uri;
+Error http_get(const char *uri, const char **headers, int headers_count, bool follow_redirects, int max_redirects, HttpResponse *response) {
+    URI parsed_uri = {0};
+    NetSocket sock = {0};
     Error err = ERR_OK();
-    HttpResponse current_response;
+    HttpResponse current_response = {0};
 
     err = parse_uri(uri, &parsed_uri);
     if (ERR_FAILED(err)) {
@@ -39,7 +39,7 @@ Error http_get(const char *uri, bool follow_redirects, int max_redirects, HttpRe
         goto exit_get;
     }
 
-    err = http_get_once(&sock, parsed_uri.host, parsed_uri.path, parsed_uri.port, parsed_uri.addr_type, &current_response);
+    err = http_get_once(&sock, parsed_uri.host, parsed_uri.path, parsed_uri.port, parsed_uri.addr_type, headers, headers_count, &current_response);
     if (ERR_FAILED(err)) {
         err = ERR_PROPAGATE(err, "Failed to get HTTP response from %s:%d", parsed_uri.host, parsed_uri.port);
         goto exit_get;
@@ -57,12 +57,12 @@ Error http_get(const char *uri, bool follow_redirects, int max_redirects, HttpRe
             // Extract Location header
             size_t url_len = 0;
             char *url = NULL;
-            char *headers = strstr(current_response.raw, "\r\n");
+            char *headers_redir = strstr(current_response.raw, "\r\n");
 
-            while (headers) {
-                headers += 2;
-                if (strncasecmp(headers, "Location:", 9) == 0) {
-                    url = headers + 9;
+            while (headers_redir) {
+                headers_redir += 2;
+                if (strncasecmp(headers_redir, "Location:", 9) == 0) {
+                    url = headers_redir + 9;
                     while (*url == ' ') url++;
                     char *end = strstr(url, "\r\n");
                     if (!end) {
@@ -72,7 +72,7 @@ Error http_get(const char *uri, bool follow_redirects, int max_redirects, HttpRe
                     url_len = end - url;
                     break;
                 }
-                headers = strstr(headers, "\r\n");
+                headers_redir = strstr(headers_redir, "\r\n");
             }
 
             if (!url) {
@@ -94,7 +94,7 @@ Error http_get(const char *uri, bool follow_redirects, int max_redirects, HttpRe
                 memcpy(new_path, url, url_len);
                 new_path[url_len] = '\0';
 
-                err = http_get_once(&sock, parsed_uri.host, new_path, parsed_uri.port, parsed_uri.addr_type, &current_response);
+                err = http_get_once(&sock, parsed_uri.host, new_path, parsed_uri.port, parsed_uri.addr_type, headers, headers_count, &current_response);
                 if (ERR_FAILED(err))
                     goto exit_get;
             } else {
@@ -108,7 +108,7 @@ Error http_get(const char *uri, bool follow_redirects, int max_redirects, HttpRe
                     goto exit_get;
                 }
                     
-                err = http_get_once(&sock, parsed_uri.host, parsed_uri.path, parsed_uri.port, parsed_uri.addr_type, &current_response);
+                err = http_get_once(&sock, parsed_uri.host, parsed_uri.path, parsed_uri.port, parsed_uri.addr_type, headers, headers_count, &current_response);
                 if (ERR_FAILED(err)) {    
                     err = ERR_PROPAGATE(err, "HTTP redirect failed to %s:%d", parsed_uri.host, parsed_uri.port);
                     goto exit_get;
@@ -126,12 +126,12 @@ exit_get:
     return err;
 }
 
-Error http_post(const char *uri, const char *content_type, const char *body, bool follow_redirects, int max_redirects, HttpResponse *response) {
-    NetSocket sock;
-    URI parsed_uri;
+Error http_post(const char *uri, const char *body, const char **headers, int headers_count, bool follow_redirects, int max_redirects, HttpResponse *response) {
     bool use_post = true;
+    URI parsed_uri = {0};
+    NetSocket sock = {0};
     Error err = ERR_OK();
-    HttpResponse current_response;
+    HttpResponse current_response = {0};
 
     err = parse_uri(uri, &parsed_uri);
     if (ERR_FAILED(err)) {
@@ -145,7 +145,7 @@ Error http_post(const char *uri, const char *content_type, const char *body, boo
         goto exit_post;
     }
 
-    err = http_post_once(&sock, parsed_uri.host, parsed_uri.path, parsed_uri.port, parsed_uri.addr_type, content_type, body, &current_response);
+    err = http_post_once(&sock, parsed_uri.host, parsed_uri.path, parsed_uri.port, parsed_uri.addr_type, body, headers, headers_count, &current_response);
     if (ERR_FAILED(err)) {
         err = ERR_PROPAGATE(err, "Failed to POST to %s:%d", parsed_uri.host, parsed_uri.port);
         goto exit_post;
@@ -164,13 +164,13 @@ Error http_post(const char *uri, const char *content_type, const char *body, boo
             /* Extract Location header */
             size_t url_len = 0;
             char *url = NULL;
-            char *headers = strstr(current_response.raw, "\r\n");
+            char *headers_redir = strstr(current_response.raw, "\r\n");
 
-            while (headers) {
-                headers += 2;
+            while (headers_redir) {
+                headers_redir += 2;
 
-                if (strncasecmp(headers, "Location:", 9) == 0) {
-                    url = headers + 9;
+                if (strncasecmp(headers_redir, "Location:", 9) == 0) {
+                    url = headers_redir + 9;
                     while (*url == ' ') url++;
 
                     char *end = strstr(url, "\r\n");
@@ -183,7 +183,7 @@ Error http_post(const char *uri, const char *content_type, const char *body, boo
                     break;
                 }
 
-                headers = strstr(headers, "\r\n");
+                headers_redir = strstr(headers_redir, "\r\n");
             }
 
             if (!url) {
@@ -213,9 +213,9 @@ Error http_post(const char *uri, const char *content_type, const char *body, boo
                 new_path[url_len] = '\0';
 
                 if (use_post) {
-                    err = http_post_once(&sock, parsed_uri.host, new_path, parsed_uri.port, parsed_uri.addr_type, content_type, body, &current_response);
+                    err = http_post_once(&sock, parsed_uri.host, new_path, parsed_uri.port, parsed_uri.addr_type, body, headers, headers_count, &current_response);
                 } else {
-                    err = http_get_once(&sock, parsed_uri.host, new_path, parsed_uri.port, parsed_uri.addr_type, &current_response);
+                    err = http_get_once(&sock, parsed_uri.host, new_path, parsed_uri.port, parsed_uri.addr_type, headers, headers_count, &current_response);
                 }
             } else {
                 char new_url[1536];
@@ -233,9 +233,9 @@ Error http_post(const char *uri, const char *content_type, const char *body, boo
                 }
 
                 if (use_post) {
-                    err = http_post_once(&sock, parsed_uri.host, parsed_uri.path, parsed_uri.port, parsed_uri.addr_type, content_type, body, &current_response);
+                    err = http_post_once(&sock, parsed_uri.host, parsed_uri.path, parsed_uri.port, parsed_uri.addr_type, body, headers, headers_count, &current_response);
                 } else {
-                    err = http_get_once(&sock, parsed_uri.host, parsed_uri.path, parsed_uri.port, parsed_uri.addr_type, &current_response);
+                    err = http_get_once(&sock, parsed_uri.host, parsed_uri.path, parsed_uri.port, parsed_uri.addr_type, headers, headers_count, &current_response);
                 }
             }
 
@@ -254,7 +254,7 @@ exit_post:
 }
 
 /* Internal helper functions */
-static Error http_get_once(NetSocket *sock, const char *host, const char *path, int port, NetAddrType addr_type, HttpResponse *out) {
+static Error http_get_once(NetSocket *sock, const char *host, const char *path, int port, NetAddrType addr_type, const char **headers, int headers_count, HttpResponse *out) {
     // Establish SOCKS4 connection
     Error err;
     err = socks4_connect(sock, host, (uint16_t)port, PROG_NAME, addr_type);
@@ -266,27 +266,81 @@ static Error http_get_once(NetSocket *sock, const char *host, const char *path, 
     // Construct HTTP GET request
     char request[2048];
     char port_part[16] = "";
+    char *headers_str = NULL;
     
     if (port != 80) {
         snprintf(port_part, sizeof(port_part), ":%d", port);
+    }
+
+    // Validate and format headers
+    if (headers_count > 0) {   
+        // Calculate total length of headers
+        size_t total_len = 0;
+        for (int i = 0; i < headers_count; i++) {
+            total_len += strlen(headers[i]) + 2; // +2 for \r\n
+        }
+        headers_str = (char *)malloc(total_len + 1);
+        if (!headers_str) {
+            return ERR_NEW(ERR_OUTOFMEMORY, "Failed to allocate memory for headers");
+        }
+        headers_str[0] = '\0'; // Initialize empty string
+
+        char *pos = headers_str;
+        for (int i = 0; i < headers_count; i++) {
+            const char *header_value = headers[i];
+            err = validate_header((char *)header_value);
+            if (ERR_FAILED(err)) {
+                free(headers_str);
+                return ERR_PROPAGATE(err, "Invalid header: %s", header_value);
+            }
+
+            // Trim and copy the header
+            const char *start = header_value;
+            const char *end = header_value + strlen(header_value) - 1;
+
+            // Trim leading whitespace
+            while (*start && isspace((unsigned char)*start)) {
+                start++;
+            }
+
+            // Trim trailing whitespace and CRLF
+            while (end > start && (isspace((unsigned char)*end) || *end == '\r' || *end == '\n')) {
+                end--;
+            }
+
+            size_t header_len = end - start + 1;
+            memcpy(pos, start, header_len);
+            pos += header_len;
+            memcpy(pos, "\r\n", 2);
+            pos += 2;
+        }
+        *pos = '\0';
+    } else {
+        headers_str = "";
     }
 
     snprintf(request, sizeof(request),
              "GET %s HTTP/1.1\r\n"
              "Host: %s%s\r\n"
              "User-Agent: Torilate\r\n"
+             "%s"
              "Connection: close\r\n"
              "\r\n",
-             path, host, port_part);
+             path, host, port_part, headers_str);
+    
+    if (headers_count > 0 && headers_str) {
+        free(headers_str);
+    }
 
     err = http_send(sock, request);
-    if (ERR_FAILED(err))
+    if (ERR_FAILED(err)) {
         return err;
+    }
 
     return http_recv_response(sock, out);
 }
 
-static Error http_post_once(NetSocket *sock, const char *host, const char *path, int port, NetAddrType addr_type, const char *content_type, const char *body, HttpResponse *out) {
+static Error http_post_once(NetSocket *sock, const char *host, const char *path, int port, NetAddrType addr_type, const char *body, const char **headers, int headers_count, HttpResponse *out) {
     // Establish SOCKS4 connection
     Error err;
     err = socks4_connect(sock, host, (uint16_t)port, PROG_NAME, addr_type);
@@ -298,18 +352,58 @@ static Error http_post_once(NetSocket *sock, const char *host, const char *path,
     // Construct HTTP POST request
     char request[4096];
     char port_part[16] = "";
-    char content_type_header[256];
+    char *headers_str = NULL;
     size_t body_len = body ? strlen(body) : 0;
     
     if (port != 80) {
         snprintf(port_part, sizeof(port_part), ":%d", port);
     }
-    
-    snprintf(content_type_header, 256, 
-             "%s%s%s", 
-             content_type ? "Content-Type: " : "",
-             content_type ? content_type : "",
-             content_type ? "\r\n" : "");
+        
+    if (headers_count > 0) {   
+        // Calculate total length of headers
+        size_t total_len = 0;
+        for (int i = 0; i < headers_count; i++) {
+            total_len += strlen(headers[i]) + 2; // +2 for \r\n
+        }
+        headers_str = (char *)malloc(total_len + 1);
+        if (!headers_str) {
+            return ERR_NEW(ERR_OUTOFMEMORY, "Failed to allocate memory for headers");
+        }
+        headers_str[0] = '\0'; // Initialize empty string
+
+        char *pos = headers_str;
+        for (int i = 0; i < headers_count; i++) {
+            const char *header_value = headers[i];
+            err = validate_header((char *)header_value);
+            if (ERR_FAILED(err)) {
+                free(headers_str);
+                return ERR_PROPAGATE(err, "Invalid header: %s", header_value);
+            }
+
+            // Trim and copy the header
+            const char *start = header_value;
+            const char *end = header_value + strlen(header_value) - 1;
+
+            // Trim leading whitespace
+            while (*start && isspace((unsigned char)*start)) {
+                start++;
+            }
+
+            // Trim trailing whitespace and CRLF
+            while (end > start && (isspace((unsigned char)*end) || *end == '\r' || *end == '\n')) {
+                end--;
+            }
+
+            size_t header_len = end - start + 1;
+            memcpy(pos, start, header_len);
+            pos += header_len;
+            memcpy(pos, "\r\n", 2);
+            pos += 2;
+        }
+        *pos = '\0';
+    } else {
+        headers_str = "";
+    }
 
     snprintf(request, sizeof(request),
              "POST %s HTTP/1.1\r\n"
@@ -319,11 +413,16 @@ static Error http_post_once(NetSocket *sock, const char *host, const char *path,
              "Content-Length: %zu\r\n"
              "Connection: close\r\n"
              "\r\n%s",
-             path, host, port_part, content_type_header, body_len, body ? body : "");
+             path, host, port_part, headers_str, body_len, body ? body : "");
+    
+    if (headers_count > 0 && headers_str) {
+        free(headers_str);
+    }
 
     err = http_send(sock, request);
-    if (ERR_FAILED(err))
+    if (ERR_FAILED(err)) {
         return err;
+    }
     
     // Receive response
     return http_recv_response(sock, out);

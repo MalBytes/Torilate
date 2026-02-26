@@ -21,6 +21,7 @@
 
 #define HTTP_MAX_RESPONSE 8192
 
+
 typedef enum {
     /* 1xx Informational */
     HTTP_CONTINUE                        = 100,
@@ -109,13 +110,16 @@ typedef struct {
  *  @param follow_redirects  whether to automatically follow HTTP redirects (3xx)
  *  @param max_redirects     maximum number of redirects to follow (if follow_redirects is true)
  *  @param response          HttpResponse structure to store the response
+ *  @param headers           Additional HTTP headers to include in the request
  *
  *  @return ERR_OK on success and an Error struct on failure
  */
 Error http_get(const char *uri,
-             bool follow_redirects,
-             int max_redirects,
-             HttpResponse *response);
+               const char **headers,
+               int headers_count,
+               bool follow_redirects,
+               int max_redirects,
+               HttpResponse *response);
 
 /*
  * Perform an HTTP POST request.
@@ -126,14 +130,16 @@ Error http_get(const char *uri,
  *  @param follow_redirects  whether to automatically follow HTTP redirects (3xx)
  *  @param max_redirects     maximum number of redirects to follow (if follow_redirects is true)
  *  @param response          HttpResponse structure to store the response
+ *  @param headers           Additional HTTP headers to include in the request
  *
  *  @return ERR_OK on success and an Error struct on failure
  */
 Error http_post(const char *uri,
-              const char *content_type,
-              const char *body,
-              bool follow_redirects,
-              int max_redirects,
-              HttpResponse *response);
+                const char *body,
+                const char **headers,
+                int headers_count,
+                bool follow_redirects,
+                int max_redirects,
+                HttpResponse *response);
 
 #endif
